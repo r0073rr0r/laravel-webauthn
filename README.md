@@ -8,6 +8,10 @@ Laravel package with Livewire components for WebAuthn authentication (biometric 
 - Laravel 12.x
 - Livewire 3.x
 - Jestream 5.x
+- Composer packages:
+    - spomky-labs/base64url ^2.0
+    - spomky-labs/cbor-php ^3.1
+    - web-auth/webauthn-framework ^5.2
 
 ## 📦 Installation
 
