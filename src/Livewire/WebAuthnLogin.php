@@ -38,8 +38,10 @@ class WebAuthnLogin extends Component
         $credentialId = base64_decode($data['id'] ?? '');
 
         $key = WebAuthnKey::where('credentialId', base64_encode($credentialId))->first();
+
         if (! $key) {
-            return;
+            \Log::error('WebAuthn login failed: credentialId not found', ['credentialId' => base64_encode($credentialId)]);
+            throw new \Exception('WebAuthn login failed: credentialId not found!');
         }
 
         try {
@@ -49,6 +51,8 @@ class WebAuthnLogin extends Component
 
             $clientData = json_decode($clientDataJSON, true);
             $expectedChallenge = $this->base64url_encode(session('webauthn_login_challenge'));
+
+            \Log::info('Challenge', ['expected' => $expectedChallenge, 'received' => $clientData['challenge'] ?? null]);
 
             if (! isset($clientData['challenge']) || $clientData['challenge'] !== $expectedChallenge) {
                 throw new \Exception('Challenge mismatch!');
