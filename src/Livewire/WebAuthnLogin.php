@@ -99,6 +99,6 @@ class WebAuthnLogin extends Component
 
     public function render(): Factory|View|Application|\Illuminate\View\View
     {
-        return view('livewire.web-authn-login');
+        return view('webauthn::livewire.web-authn-login');
     }
 }

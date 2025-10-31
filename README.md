@@ -32,6 +32,12 @@ Publish all package resources (views, translations, and public assets) with a si
 php artisan vendor:publish --tag=webauthn
 ```
 
+Migrate database tables:
+
+```bash
+php artisan migrate
+```
+
 ## ⚙️ Setup
 
 After publishing the assets, include the WebAuthn JavaScript file in your layout (e.g., in `resources/views/layouts/app.blade.php` or wherever you have your main layout):

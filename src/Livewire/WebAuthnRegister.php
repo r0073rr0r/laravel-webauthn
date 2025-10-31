@@ -175,6 +175,6 @@ class WebAuthnRegister extends Component
 
     public function render(): Factory|View|Application|\Illuminate\View\View
     {
-        return view('livewire.web-authn-register');
+        return view('webauthn::livewire.web-authn-register');
     }
 }
