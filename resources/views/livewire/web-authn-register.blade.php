@@ -1,5 +1,5 @@
 <div>
-    <x-form-webauthn-section>
+    <x-webauthn::form-webauthn-section>
         <x-slot name="title">
             {{__('webauthn.registered_security_keys')}}
         </x-slot>
@@ -48,7 +48,7 @@
         <x-slot name="actions">
             <x-button wire:click="openModal">{{__('webauthn.webauthn_register_key')}}</x-button>
         </x-slot>
-    </x-form-webauthn-section>
+    </x-webauthn::form-webauthn-section>
 
     @if ($showModal)
         <div
