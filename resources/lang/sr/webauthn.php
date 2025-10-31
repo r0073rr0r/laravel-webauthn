@@ -6,6 +6,7 @@ return [
     'Edit' => 'Izmeni',
     'Cancel' => 'Otkaži',
     'Register' => 'Registruj',
+    'Actions' => 'Akcije',
     'webauthn_add_passkey' => 'Dodajte passkey za prijavu bez lozinke, otpornu na phishing. Koristite biometriju svog uređaja ili fizički sigurnosni ključ za maksimalnu zaštitu naloga.',
     'webauthn_setup_passkey' => 'Postavite passkey da se prijavite jednim dodirom, otiskom prsta ili skenom lica — brže i sigurnije od lozinki!',
     'webauthn_name_your_key' => 'Nazovite svoj sigurnosni ključ',

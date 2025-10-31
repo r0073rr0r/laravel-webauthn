@@ -6,6 +6,7 @@ return [
     'Edit' => 'Edit',
     'Cancel' => 'Cancel',
     'Register' => 'Register',
+    'Actions' => 'Actions',
     'webauthn_add_passkey' => 'Add a passkey for passwordless, phishing-resistant login. Use your device’s biometrics or a physical security key for maximum account protection.',
     'webauthn_setup_passkey' => 'Set up a passkey to sign in with just a tap, fingerprint, or face scan — it’s faster and safer than passwords!',
     'webauthn_name_your_key' => 'Name your security key',
