@@ -4,27 +4,24 @@ namespace r0073rr0r\WebAuthn;
 
 use Illuminate\Support\ServiceProvider;
 use Livewire\Livewire;
+use r0073rr0r\WebAuthn\Livewire\WebAuthnLogin;
+use r0073rr0r\WebAuthn\Livewire\WebAuthnRegister;
 
 class WebAuthnServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
-        // Učitaj view-ove iz paketa
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'webauthn');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'webauthn');
+        $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'webauthn');
 
-        // Registruj Livewire komponente
-        Livewire::component('webauthn-register', \r0073rr0r\WebAuthn\Livewire\WebAuthnRegister::class);
-        Livewire::component('webauthn-login', \r0073rr0r\WebAuthn\Livewire\WebAuthnLogin::class);
+        Livewire::component('webauthn-register', WebAuthnRegister::class);
+        Livewire::component('webauthn-login', WebAuthnLogin::class);
 
-        // Objavi public fajlove (JS itd.)
         $this->publishes([
-            __DIR__ . '/../public' => public_path('vendor/webauthn'),
-        ], 'public');
-
-        // Objavi view fajlove (ako korisnik želi da ih izmeni)
-        $this->publishes([
-            __DIR__ . '/../resources/views' => resource_path('views/vendor/webauthn'),
-        ], 'views');
+            __DIR__.'/../public' => public_path('vendor/webauthn'),
+            __DIR__.'/../resources/views' => resource_path('views/vendor/webauthn'),
+            __DIR__.'/../resources/lang' => resource_path('lang/vendor/webauthn'),
+        ], 'webauthn');
     }
 
     public function register(): void
