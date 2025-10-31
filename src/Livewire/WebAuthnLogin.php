@@ -1,13 +1,15 @@
 <?php
+
 namespace r0073rr0r\WebAuthn\Livewire;
 
-use Livewire\Component;
 use Illuminate\Support\Facades\Auth;
+use Livewire\Component;
 use r0073rr0r\WebAuthn\Models\WebAuthnKey;
 
 class WebAuthnLogin extends Component
 {
     public $keys;
+
     public $challenge;
 
     protected $listeners = ['loginWithPasskey'];
@@ -16,7 +18,7 @@ class WebAuthnLogin extends Component
     {
         $this->keys = WebAuthnKey::all();
 
-        if (!session()->has('webauthn_login_challenge')) {
+        if (! session()->has('webauthn_login_challenge')) {
             session(['webauthn_login_challenge' => random_bytes(32)]);
         }
 
@@ -31,8 +33,9 @@ class WebAuthnLogin extends Component
         // ⚡ Direktno binarno poređenje (radi i za SQLite i MySQL)
         $key = WebAuthnKey::where('credentialId', $credentialId)->first();
 
-        if (!$key) {
+        if (! $key) {
             \Log::error('WebAuthn login failed: credentialId not found', ['credentialId' => $data['id']]);
+
             return;
         }
 
@@ -44,12 +47,12 @@ class WebAuthnLogin extends Component
             $clientData = json_decode($clientDataJSON, true);
             $expectedChallenge = $this->challenge;
 
-            if (!isset($clientData['challenge']) || $clientData['challenge'] !== $expectedChallenge) {
+            if (! isset($clientData['challenge']) || $clientData['challenge'] !== $expectedChallenge) {
                 throw new \Exception('Challenge mismatch!');
             }
 
             $clientDataHash = hash('sha256', $clientDataJSON, true);
-            $signedData = $authenticatorData . $clientDataHash;
+            $signedData = $authenticatorData.$clientDataHash;
 
             $ok = openssl_verify($signedData, $signature, $key->credentialPublicKey, OPENSSL_ALGO_SHA256);
             if ($ok !== 1) {
@@ -80,6 +83,7 @@ class WebAuthnLogin extends Component
         if ($remainder) {
             $data .= str_repeat('=', 4 - $remainder);
         }
+
         return base64_decode(strtr($data, '-_', '+/'));
     }
 

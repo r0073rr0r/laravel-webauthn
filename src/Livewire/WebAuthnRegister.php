@@ -14,9 +14,13 @@ use Random\RandomException;
 class WebAuthnRegister extends Component
 {
     public $creationOptions;
+
     public $keys;
+
     public $userId;
+
     public $keyName = '';
+
     public $showModal = false;
 
     protected $listeners = ['registerKey'];
@@ -77,7 +81,9 @@ class WebAuthnRegister extends Component
 
     public function registerKey($credential): void
     {
-        if (!$credential || empty($this->keyName)) return;
+        if (! $credential || empty($this->keyName)) {
+            return;
+        }
 
         $data = json_decode($credential, true);
         $attestationObject = $this->base64url_decode($data['response']['attestationObject'] ?? '');
@@ -88,7 +94,9 @@ class WebAuthnRegister extends Component
         $normalized = $cborAtt->normalize();
         $authData = $normalized['authData'] ?? null;
 
-        if (!$authData) return;
+        if (! $authData) {
+            return;
+        }
 
         $credentialData = substr($authData, 37);
         $credIdLen = unpack('n', substr($credentialData, 16, 2))[1];
@@ -102,7 +110,9 @@ class WebAuthnRegister extends Component
         $coseKey = Key::createFromData($cborCose->normalize());
         $publicKeyPem = $coseKey->asPEM();
 
-        if (WebAuthnKey::where('credentialId', $credentialId)->exists()) return;
+        if (WebAuthnKey::where('credentialId', $credentialId)->exists()) {
+            return;
+        }
 
         $counter = $this->extractCounter($authData);
 
@@ -125,8 +135,11 @@ class WebAuthnRegister extends Component
 
     private function extractCounter(string $authData): int
     {
-        if (strlen($authData) < 37) return 0;
+        if (strlen($authData) < 37) {
+            return 0;
+        }
         $counterBytes = substr($authData, 33, 4);
+
         return strlen($counterBytes) === 4 ? unpack('N', $counterBytes)[1] : 0;
     }
 
@@ -138,7 +151,10 @@ class WebAuthnRegister extends Component
     private function base64url_decode(string $data): string
     {
         $remainder = strlen($data) % 4;
-        if ($remainder) $data .= str_repeat('=', 4 - $remainder);
+        if ($remainder) {
+            $data .= str_repeat('=', 4 - $remainder);
+        }
+
         return base64_decode(strtr($data, '-_', '+/'));
     }
 
@@ -150,7 +166,9 @@ class WebAuthnRegister extends Component
     public function deleteKey($id): void
     {
         $key = WebAuthnKey::find($id);
-        if (!$key || $key->user_id !== $this->userId) return;
+        if (! $key || $key->user_id !== $this->userId) {
+            return;
+        }
         $key->delete();
         $this->keys = WebAuthnKey::where('user_id', $this->userId)->get();
     }
