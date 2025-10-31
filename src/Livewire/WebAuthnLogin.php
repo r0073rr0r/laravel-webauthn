@@ -67,7 +67,7 @@ class WebAuthnLogin extends Component
 
             Auth::login($key->user);
 
-            return redirect()->intended('/accounts');
+            return redirect()->intended('/');
 
         } catch (\Throwable $e) {
             \Log::error('WebAuthn login failed: '.$e->getMessage());
