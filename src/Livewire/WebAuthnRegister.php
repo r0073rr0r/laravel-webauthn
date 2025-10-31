@@ -1,8 +1,7 @@
 <?php
 
-namespace App\Livewire;
+namespace r0073rr0r\WebAuthn\Livewire;
 
-use App\Models\WebAuthnKey;
 use CBOR\Decoder;
 use CBOR\StringStream;
 use Cose\Key\Key;
@@ -10,6 +9,7 @@ use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
 use Livewire\Component;
+use r0073rr0r\WebAuthn\Models\WebAuthnKey;
 use Random\RandomException;
 
 class WebAuthnRegister extends Component

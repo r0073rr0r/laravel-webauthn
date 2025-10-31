@@ -1,13 +1,13 @@
 <?php
 
-namespace App\Livewire;
+namespace r0073rr0r\WebAuthn\Livewire;
 
-use App\Models\WebAuthnKey;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use r0073rr0r\WebAuthn\Models\WebAuthnKey;
 use Random\RandomException;
 
 class WebAuthnLogin extends Component

@@ -21,6 +21,7 @@ class WebAuthnServiceProvider extends ServiceProvider
             __DIR__.'/../public' => public_path('vendor/webauthn'),
             __DIR__.'/../resources/views' => resource_path('views/vendor/webauthn'),
             __DIR__.'/../resources/lang' => resource_path('lang/vendor/webauthn'),
+            __DIR__.'/../database/migrations/' => database_path('migrations'),
         ], 'webauthn');
     }
 
