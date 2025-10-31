@@ -33,5 +33,13 @@
         "r0073rr0r\\WebAuthn\\WebAuthnServiceProvider"
       ]
     }
+  },
+  "scripts": {
+    "post-install-cmd": [
+      "@php artisan vendor:publish --tag=webauthn --force"
+    ],
+    "post-update-cmd": [
+      "@php artisan vendor:publish --tag=webauthn --force"
+    ]
   }
 }
