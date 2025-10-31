@@ -1,6 +1,6 @@
 <div>
     @if(count($keys) > 0)
-        <x-button id="loginPasskey" class="mt-2">{{ __('webauthn.login_with_passkey') }}</x-button>
+        <x-button id="loginPasskey" class="mt-2">{{ __('webauthn::webauthn.login_with_passkey') }}</x-button>
     @endif
 
     <script>
