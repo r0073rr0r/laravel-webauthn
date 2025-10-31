@@ -33,7 +33,7 @@ class WebAuthnRegister extends Component
         session(['webauthn_register_challenge' => $challenge]);
 
         $rp = [
-            'name' => 'Casino',
+            'name' => config('app.name'),
             'id' => request()->getHost(),
         ];
 
@@ -102,7 +102,6 @@ class WebAuthnRegister extends Component
         $coseKey = Key::createFromData($cborCose->normalize());
         $publicKeyPem = $coseKey->asPEM();
 
-        // ❌ SQLite/MySQL kompatibilno: direktno binarno
         if (WebAuthnKey::where('credentialId', $credentialId)->exists()) return;
 
         $counter = $this->extractCounter($authData);

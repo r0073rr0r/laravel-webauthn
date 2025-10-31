@@ -1,9 +1,9 @@
 <div>
-    <x-webauthn::form-webauthn-section>
-        <x-slot name="title">{{__('webauthn.registered_security_keys')}}</x-slot>
+    <x-webauthn::webauthn.:form-webauthn::webauthn.section>
+        <x-slot name="title">{{__('webauthn::webauthn.registered_security_keys')}}</x-slot>
         <x-slot name="description">
-            {{ __('webauthn.webauthn_add_passkey') }}
-            {{ __('webauthn.webauthn_setup_passkey') }}
+            {{ __('webauthn::webauthn.webauthn::webauthn.add_passkey') }}
+            {{ __('webauthn::webauthn.webauthn::webauthn.setup_passkey') }}
         </x-slot>
 
         <x-slot name="form">
@@ -11,10 +11,10 @@
                 <thead class="bg-gray-50">
                 <tr>
                     <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">
-                        {{__('webauthn.Name')}}
+                        {{__('webauthn::webauthn.Name')}}
                     </th>
                     <th class="px-6 py-3 text-xs font-medium text-gray-500 uppercase tracking-wider text-center">
-                        {{__('webauthn.Actions')}}
+                        {{__('webauthn::webauthn.Actions')}}
                     </th>
                 </tr>
                 </thead>
@@ -24,16 +24,16 @@
                         <td class="px-6 py-4 whitespace-nowrap text-center">{{ $key->name }}</td>
                         <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 text-center">
                             <x-danger-button wire:click="deleteKey({{ $key->id }})"
-                                             wire:confirm="{{ __('webauthn.delete_key_confirm') }}"
+                                             wire:confirm="{{ __('webauthn::webauthn.delete_key_confirm') }}"
                                              class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded">
-                                {{__('webauthn.Delete')}}
+                                {{__('webauthn::webauthn.Delete')}}
                             </x-danger-button>
                         </td>
                     </tr>
                 @empty
                     <tr>
                         <td colspan="3" class="px-6 py-4 text-center text-gray-500">
-                            {{__('webauthn.no_keys_registered')}}
+                            {{__('webauthn::webauthn.no_keys_registered')}}
                         </td>
                     </tr>
                 @endforelse
@@ -42,21 +42,21 @@
         </x-slot>
 
         <x-slot name="actions">
-            <x-button wire:click="openModal">{{__('webauthn.webauthn_register_key')}}</x-button>
+            <x-button wire:click="openModal">{{__('webauthn::webauthn.webauthn::webauthn.register_key')}}</x-button>
         </x-slot>
-    </x-webauthn::form-webauthn-section>
+    </x-webauthn::webauthn.:form-webauthn::webauthn.section>
 
     @if($showModal)
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
             <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
-                <h3 class="text-lg font-medium text-gray-900">{{__('webauthn.webauthn_name_your_key')}}</h3>
+                <h3 class="text-lg font-medium text-gray-900">{{__('webauthn::webauthn.webauthn::webauthn.name_your_key')}}</h3>
                 <input type="text" wire:model="keyName"
-                       placeholder="{{__('webauthn.webauthn_key_name_placeholder')}}"
+                       placeholder="{{__('webauthn::webauthn.webauthn::webauthn.key_name_placeholder')}}"
                        class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-3 py-2">
                 <div class="mt-4 flex justify-end">
-                    <x-secondary-button wire:click="closeModal" class="mr-2">{{__('webauthn.Cancel')}}</x-secondary-button>
+                    <x-secondary-button wire:click="closeModal" class="mr-2">{{__('webauthn::webauthn.Cancel')}}</x-secondary-button>
                     <x-button onclick="startRegistration()" class="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600">
-                        {{__('webauthn.Register')}}
+                        {{__('webauthn::webauthn.Register')}}
                     </x-button>
                 </div>
             </div>
