@@ -1,7 +1,6 @@
 {
   "name": "r0073rr0r/laravel-webauthn",
   "description": "Laravel Livewire WebAuthn package for registration and login.",
-  "version": "1.0.3",
   "type": "library",
   "license": "MIT",
   "authors": [
