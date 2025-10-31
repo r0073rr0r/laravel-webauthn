@@ -19,9 +19,13 @@ composer require r0073rr0r/laravel-webauthn
 Publish views and config files:
 
 ```bash
-php artisan vendor:publish --provider="r0073rr0r\LaravelWebAuthn\WebAuthnServiceProvider"
+php artisan vendor:publish --provider="r0073rr0r\WebAuthn\WebAuthnServiceProvider"
 ```
 
+Publish all package resources (views, translations, and public assets) with a single command:
+```bash
+php artisan vendor:publish --tag=webauthn
+```
 
 ## ⚙️ Setup
 
