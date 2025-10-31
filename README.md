@@ -5,8 +5,9 @@ Laravel package with Livewire components for WebAuthn authentication (biometric 
 ## 📋 Requirements
 
 - PHP 8.2+
-- Laravel 12.x+
-- Livewire 3.x+
+- Laravel 12.x
+- Livewire 3.x
+- Jestream 5.x
 
 ## 📦 Installation
 
