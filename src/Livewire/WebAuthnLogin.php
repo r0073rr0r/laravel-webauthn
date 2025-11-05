@@ -4,6 +4,7 @@ namespace r0073rr0r\WebAuthn\Livewire;
 
 use Illuminate\Support\Facades\Auth;
 use Livewire\Component;
+use r0073rr0r\WebAuthn\Helpers\CredentialParser;
 use r0073rr0r\WebAuthn\Models\WebAuthnKey;
 
 class WebAuthnLogin extends Component
@@ -28,26 +29,26 @@ class WebAuthnLogin extends Component
     public function loginWithPasskey($credential)
     {
         $data = json_decode($credential, true);
-        $credentialId = $this->base64url_decode($data['id'] ?? '');
+        $credentialId = CredentialParser::base64url_decode($data['id'] ?? '');
 
-        // ⚡ Direktno binarno poređenje (radi i za SQLite i MySQL)
         $key = WebAuthnKey::where('credentialId', $credentialId)->first();
 
         if (! $key) {
+            session()->flash('status', 'Credential not found');
             \Log::error('WebAuthn login failed: credentialId not found', ['credentialId' => $data['id']]);
-
             return;
         }
 
         try {
-            $clientDataJSON = $this->base64url_decode($data['response']['clientDataJSON'] ?? '');
-            $authenticatorData = $this->base64url_decode($data['response']['authenticatorData'] ?? '');
-            $signature = $this->base64url_decode($data['response']['signature'] ?? '');
+            $clientDataJSON = CredentialParser::base64url_decode($data['response']['clientDataJSON'] ?? '');
+            $authenticatorData = CredentialParser::base64url_decode($data['response']['authenticatorData'] ?? '');
+            $signature = CredentialParser::base64url_decode($data['response']['signature'] ?? '');
 
             $clientData = json_decode($clientDataJSON, true);
             $expectedChallenge = $this->challenge;
 
             if (! isset($clientData['challenge']) || $clientData['challenge'] !== $expectedChallenge) {
+                session()->flash('status', 'Challenge mismatch!');
                 throw new \Exception('Challenge mismatch!');
             }
 
@@ -56,12 +57,14 @@ class WebAuthnLogin extends Component
 
             $ok = openssl_verify($signedData, $signature, $key->credentialPublicKey, OPENSSL_ALGO_SHA256);
             if ($ok !== 1) {
+                session()->flash('status', 'Invalid signature!');
                 throw new \Exception('Invalid signature!');
             }
 
             $signCount = unpack('N', substr($authenticatorData, 33, 4))[1];
 
             if ($signCount < $key->counter) {
+                session()->flash('status', 'Sign counter decreased! Possible replay attack.');
                 throw new \Exception('Sign counter decreased! Possible replay attack.');
             }
 
@@ -73,18 +76,10 @@ class WebAuthnLogin extends Component
             return redirect()->intended('/');
 
         } catch (\Throwable $e) {
+            session()->flash('status', 'Login failed: '.$e->getMessage());
             \Log::error('WebAuthn login failed: '.$e->getMessage());
+            return;
         }
-    }
-
-    private function base64url_decode(string $data): string
-    {
-        $remainder = strlen($data) % 4;
-        if ($remainder) {
-            $data .= str_repeat('=', 4 - $remainder);
-        }
-
-        return base64_decode(strtr($data, '-_', '+/'));
     }
 
     public function render()
