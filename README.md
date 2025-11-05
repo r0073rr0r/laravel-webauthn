@@ -1,4 +1,4 @@
-# Laravel WebAuthn Livewire Components
+# Laravel – Jetstream Livewire WebAuthn Components
 
 [![Packagist Version](https://img.shields.io/packagist/v/r0073rr0r/laravel-webauthn)](https://packagist.org/packages/r0073rr0r/laravel-webauthn)
 [![Total Downloads](https://img.shields.io/packagist/dt/r0073rr0r/laravel-webauthn)](https://packagist.org/packages/r0073rr0r/laravel-webauthn)
@@ -16,7 +16,7 @@ Laravel package with Livewire components for WebAuthn authentication (biometric 
 - PHP 8.2+
 - Laravel 12.x
 - Livewire 3.x
-- Jestream 5.x
+- **Jestream** 5.x
 - OpenSSL extension for PHP
 - Composer packages:
     - spomky-labs/base64url ^2.0
