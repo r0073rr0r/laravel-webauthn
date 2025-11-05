@@ -30,6 +30,12 @@ Install the package via Composer:
 ```bash
 composer require r0073rr0r/laravel-webauthn
 ```
+If you encounter dependency errors, run:
+```bash
+composer require r0073rr0r/laravel-webauthn -W 
+```
+> **Note:** The package [`spomky-labs/cbor-php`](https://github.com/Spomky-Labs/cbor-php) depends on [`brick/math`](https://github.com/brick/math) `^0.13`.
+
 
 Publish views and config files:
 
