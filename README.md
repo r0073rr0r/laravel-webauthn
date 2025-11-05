@@ -62,7 +62,12 @@ This script is required for the WebAuthn components to work properly.
 ### Registration (WebAuthnRegister)
 
 Add the component to your Blade view (_I added it in `resources/views/profile/show.blade.php`_):
- ```bladehtml
+
+<a href="https://cloud.dbase.in.rs/s/sjq5JC735gcLxKE?dir=/&editing=false&openfile=true" target="_blank">
+  <img src="https://cloud.dbase.in.rs/apps/files_sharing/publicpreview/sjq5JC735gcLxKE?file=/&fileId=996296&x=1920&y=1080&a=true&etag=3b5490f73173d4da7bb3cc915fc9ce6f" alt="Register">
+</a>
+
+```bladehtml
  <livewire:web-authn-register />
  ```
 
@@ -72,7 +77,11 @@ This component allows users to register their WebAuthn device (fingerprint, Face
 
 Add the component to your Blade view (_I added it in `resources/views/auth/login.blade.php` after login form_):
 
- ```bladehtml
+<a href="https://cloud.dbase.in.rs/s/TJEw7fZjbo2Ej6e?dir=/&editing=false&openfile=true" target="_blank">
+<img src="https://cloud.dbase.in.rs/apps/files_sharing/publicpreview/TJEw7fZjbo2Ej6e?file=/&fileId=996289&x=1920&y=1080&a=true&etag=2d385d71d5ac4988489c39ad0e905089" alt="Login">
+</a>
+
+```bladehtml
  <livewire:web-authn-login />
  ```
 

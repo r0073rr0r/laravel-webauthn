@@ -8,6 +8,7 @@ use Cose\Key\Key;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
 use Livewire\Component;
+use r0073rr0r\WebAuthn\Helpers\CredentialParser;
 use r0073rr0r\WebAuthn\Models\WebAuthnKey;
 use Random\RandomException;
 
@@ -53,10 +54,10 @@ class WebAuthnRegister extends Component
         ];
 
         $this->creationOptions = [
-            'challenge' => $this->base64url_encode($challenge),
+            'challenge' => CredentialParser::base64url_encode($challenge),
             'rp' => $rp,
             'user' => [
-                'id' => $this->base64url_encode((string) auth()->user()->id), // za Livewire
+                'id' => CredentialParser::base64url_encode((string) auth()->user()->id), // za Livewire
                 'name' => $user['name'],
                 'displayName' => $user['displayName'],
             ],
@@ -82,11 +83,12 @@ class WebAuthnRegister extends Component
     public function registerKey($credential): void
     {
         if (! $credential || empty($this->keyName)) {
+            session()->flash('status', 'Device name is required');
             return;
         }
 
         $data = json_decode($credential, true);
-        $attestationObject = $this->base64url_decode($data['response']['attestationObject'] ?? '');
+        $attestationObject = CredentialParser::base64url_decode($data['response']['attestationObject'] ?? '');
 
         $decoder = new Decoder;
         $streamAtt = new StringStream($attestationObject);
@@ -95,6 +97,7 @@ class WebAuthnRegister extends Component
         $authData = $normalized['authData'] ?? null;
 
         if (! $authData) {
+            session()->flash('status', 'Invalid credential data');
             return;
         }
 
@@ -111,56 +114,27 @@ class WebAuthnRegister extends Component
         $publicKeyPem = $coseKey->asPEM();
 
         if (WebAuthnKey::where('credentialId', $credentialId)->exists()) {
+            session()->flash('status', 'This key is already registered');
             return;
         }
 
-        $counter = $this->extractCounter($authData);
+        $counter = CredentialParser::extractCounter($authData);
 
         WebAuthnKey::create([
             'user_id' => $this->userId,
             'name' => $this->keyName,
-            'credentialId' => $credentialId, // binarno
+            'credentialId' => $credentialId,
             'type' => $data['type'] ?? '',
             'transports' => json_encode($data['response']['transports'] ?? []),
             'attestationType' => base64_encode($attestationObject),
             'trustPath' => base64_encode(json_encode($data['response'] ?? [])),
-            'aaguid' => $this->extractAAGUID($authData),
+            'aaguid' => CredentialParser::extractAAGUID($authData),
             'credentialPublicKey' => $publicKeyPem,
             'counter' => $counter,
         ]);
 
         $this->keys = WebAuthnKey::where('user_id', $this->userId)->get();
         $this->closeModal();
-    }
-
-    private function extractCounter(string $authData): int
-    {
-        if (strlen($authData) < 37) {
-            return 0;
-        }
-        $counterBytes = substr($authData, 33, 4);
-
-        return strlen($counterBytes) === 4 ? unpack('N', $counterBytes)[1] : 0;
-    }
-
-    private function extractAAGUID(string $authData): string
-    {
-        return bin2hex(substr($authData, 37, 16));
-    }
-
-    private function base64url_decode(string $data): string
-    {
-        $remainder = strlen($data) % 4;
-        if ($remainder) {
-            $data .= str_repeat('=', 4 - $remainder);
-        }
-
-        return base64_decode(strtr($data, '-_', '+/'));
-    }
-
-    private function base64url_encode(string $data): string
-    {
-        return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
     public function deleteKey($id): void
