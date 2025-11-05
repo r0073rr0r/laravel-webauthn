@@ -48,7 +48,9 @@ Migrate database tables:
 php artisan migrate
 ```
 
-[![asciicast](https://asciinema.org/a/Bn7vl6s5sqh3NfZk5nFI9iPBc.svg)](https://asciinema.org/a/Bn7vl6s5sqh3NfZk5nFI9iPBc?t=7)
+<a href="https://asciinema.org/a/Bn7vl6s5sqh3NfZk5nFI9iPBc?t=7" target="_blank">
+  <img src="https://asciinema.org/a/Bn7vl6s5sqh3NfZk5nFI9iPBc.svg" alt="asciicast installation of package">
+</a>
 
 ## ⚙️ Setup
 
