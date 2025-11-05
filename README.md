@@ -48,6 +48,8 @@ Migrate database tables:
 php artisan migrate
 ```
 
+[![asciicast](https://asciinema.org/a/Bn7vl6s5sqh3NfZk5nFI9iPBc.svg)](https://asciinema.org/a/Bn7vl6s5sqh3NfZk5nFI9iPBc?t=7)
+
 ## ⚙️ Setup
 
 After publishing the assets, include the WebAuthn JavaScript file in your layout (e.g., in `resources/views/layouts/app.blade.php` & `resources/views/layouts/guest.blade.php` or wherever you have your main layout):
