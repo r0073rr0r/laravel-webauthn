@@ -9,19 +9,19 @@
 [![GitHub Issues](https://img.shields.io/github/issues/r0073rr0r/laravel-webauthn)](https://github.com/r0073rr0r/laravel-webauthn/issues)
 [![GitHub Forks](https://img.shields.io/github/forks/r0073rr0r/laravel-webauthn?style=social)](https://github.com/r0073rr0r/laravel-webauthn/network)
 
-A Laravel package that integrates seamlessly with Jetstream and Livewire to provide WebAuthn authentication — including support for biometric login, USB security keys, and passkeys.
+A **Laravel** package that integrates seamlessly with **Jetstream** and **Livewire** to provide **WebAuthn** authentication — including support for biometric login, USB security keys, and passkeys.
 
 ## 📋 Requirements
 
-- PHP 8.2+
-- Laravel 12.x
-- Livewire 3.x
-- **Jestream** 5.x
-- OpenSSL extension for PHP
-- Composer packages:
-    - spomky-labs/base64url ^2.0
-    - spomky-labs/cbor-php ^3.1
-    - web-auth/webauthn-framework ^5.2
+- **PHP 8.2+**
+- **Laravel 12.x**
+- **Livewire 3.x**
+- **Jestream 5.x**
+- **OpenSSL** extension for PHP
+- **_Composer packages_**:
+    - **spomky-labs/base64url ^2.0**
+    - **spomky-labs/cbor-php ^3.1**
+    - **web-auth/webauthn-framework ^5.2**
 
 ## 📦 Installation
 
