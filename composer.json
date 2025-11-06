@@ -20,7 +20,7 @@
     "ext-openssl": "*"
   },
   "require-dev": {
-    "laravel/pint": "^1.25",
+    "laravel/pint": "^1.25"
   },
   "autoload": {
     "psr-4": {
