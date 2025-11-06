@@ -11,6 +11,7 @@ class WebAuthnServiceProvider extends ServiceProvider
 {
     public function boot(): void
     {
+        $this->mergeConfigFrom(__DIR__.'/../config/webauthn.php', 'webauthn');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webauthn');
         $this->loadTranslationsFrom(__DIR__.'/../resources/lang', 'webauthn');
 
@@ -21,6 +22,7 @@ class WebAuthnServiceProvider extends ServiceProvider
             __DIR__.'/../public' => public_path('vendor/webauthn'),
             __DIR__.'/../resources/views' => resource_path('views/vendor/webauthn'),
             __DIR__.'/../resources/lang' => resource_path('lang/vendor/webauthn'),
+            __DIR__.'/../config/webauthn.php' => config_path('webauthn.php'),
             __DIR__.'/../database/migrations/' => database_path('migrations'),
         ], 'webauthn');
     }
