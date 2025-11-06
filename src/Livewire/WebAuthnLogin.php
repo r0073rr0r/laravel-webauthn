@@ -47,9 +47,35 @@ class WebAuthnLogin extends Component
             $clientData = json_decode($clientDataJSON, true);
             $expectedChallenge = $this->challenge;
 
+            // One-time challenge: must match then invalidate
             if (! isset($clientData['challenge']) || $clientData['challenge'] !== $expectedChallenge) {
-                session()->flash('status', 'Challenge mismatch!');
                 throw new \Exception('Challenge mismatch!');
+            }
+            session()->forget('webauthn_login_challenge');
+
+            // Verify type and origin
+            if (($clientData['type'] ?? '') !== 'webauthn.get') {
+                throw new \Exception('Invalid clientData type');
+            }
+
+            $origin = $clientData['origin'] ?? '';
+            $allowedOrigins = array_filter((array) config('webauthn.allowed_origins', []));
+            if (! in_array($origin, $allowedOrigins, true)) {
+                throw new \Exception('Origin not allowed');
+            }
+
+            // rpIdHash must match configured rp_id
+            $rpId = (string) config('webauthn.rp_id');
+            if (! CredentialParser::rpIdHashMatches($authenticatorData, $rpId)) {
+                throw new \Exception('RP ID hash mismatch');
+            }
+
+            // Flags: require user present; optionally require user verified
+            if (! CredentialParser::isUserPresent($authenticatorData)) {
+                throw new \Exception('User not present');
+            }
+            if (config('webauthn.require_user_verification') && ! CredentialParser::isUserVerified($authenticatorData)) {
+                throw new \Exception('User not verified');
             }
 
             $clientDataHash = hash('sha256', $clientDataJSON, true);
@@ -57,14 +83,11 @@ class WebAuthnLogin extends Component
 
             $ok = openssl_verify($signedData, $signature, $key->credentialPublicKey, OPENSSL_ALGO_SHA256);
             if ($ok !== 1) {
-                session()->flash('status', 'Invalid signature!');
                 throw new \Exception('Invalid signature!');
             }
 
             $signCount = unpack('N', substr($authenticatorData, 33, 4))[1];
-
             if ($signCount < $key->counter) {
-                session()->flash('status', 'Sign counter decreased! Possible replay attack.');
                 throw new \Exception('Sign counter decreased! Possible replay attack.');
             }
 
@@ -76,8 +99,8 @@ class WebAuthnLogin extends Component
             return redirect()->intended('/');
 
         } catch (\Throwable $e) {
-            session()->flash('status', 'Login failed: '.$e->getMessage());
             \Log::error('WebAuthn login failed: '.$e->getMessage());
+            session()->flash('status', 'Login failed: '.$e->getMessage());
             return;
         }
     }

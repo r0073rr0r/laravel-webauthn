@@ -82,12 +82,42 @@ class WebAuthnRegister extends Component
 
     public function registerKey($credential): void
     {
-        if (! $credential || empty($this->keyName)) {
+        if (empty($this->keyName) || ! is_string($this->keyName) || mb_strlen($this->keyName) > 64) {
             session()->flash('status', 'Device name is required');
             return;
         }
 
         $data = json_decode($credential, true);
+
+        // Validate presence of client data
+        $clientDataJSON = CredentialParser::base64url_decode($data['response']['clientDataJSON'] ?? '');
+        if ($clientDataJSON === '' || ! ($clientData = json_decode($clientDataJSON, true))) {
+            session()->flash('status', 'Invalid client data');
+            return;
+        }
+
+        // Validate expected type and origin
+        if (($clientData['type'] ?? '') !== 'webauthn.create') {
+            session()->flash('status', 'Invalid clientData type');
+            return;
+        }
+        $origin = $clientData['origin'] ?? '';
+        $allowedOrigins = array_filter((array) config('webauthn.allowed_origins', []));
+        if (! in_array($origin, $allowedOrigins, true)) {
+            session()->flash('status', 'Origin not allowed');
+            return;
+        }
+
+        // Verify challenge (compare base64url-encoded session challenge)
+        $expectedChallenge = session()->has('webauthn_register_challenge')
+            ? CredentialParser::base64url_encode(session('webauthn_register_challenge'))
+            : null;
+        if (! $expectedChallenge || ($clientData['challenge'] ?? null) !== $expectedChallenge) {
+            session()->flash('status', 'Challenge mismatch!');
+            return;
+        }
+
+        // Now parse attestation
         $attestationObject = CredentialParser::base64url_decode($data['response']['attestationObject'] ?? '');
 
         $decoder = new Decoder;
@@ -98,6 +128,21 @@ class WebAuthnRegister extends Component
 
         if (! $authData) {
             session()->flash('status', 'Invalid credential data');
+            return;
+        }
+
+        // rpIdHash and flags
+        $rpId = (string) config('webauthn.rp_id');
+        if (! CredentialParser::rpIdHashMatches($authData, $rpId)) {
+            session()->flash('status', 'RP ID hash mismatch');
+            return;
+        }
+        if (! CredentialParser::isUserPresent($authData)) {
+            session()->flash('status', 'User not present');
+            return;
+        }
+        if (config('webauthn.require_user_verification') && ! CredentialParser::isUserVerified($authData)) {
+            session()->flash('status', 'User not verified');
             return;
         }
 
@@ -112,6 +157,14 @@ class WebAuthnRegister extends Component
         $cborCose = $decoderCose->decode($stream);
         $coseKey = Key::createFromData($cborCose->normalize());
         $publicKeyPem = $coseKey->asPEM();
+
+        // Enforce allowed algorithms
+        $alg = CredentialParser::extractCoseAlgorithm($cosePublicKey);
+        $allowedAlgs = (array) config('webauthn.allowed_algorithms', []);
+        if ($alg !== null && ! in_array($alg, $allowedAlgs, true)) {
+            session()->flash('status', 'Algorithm not allowed');
+            return;
+        }
 
         if (WebAuthnKey::where('credentialId', $credentialId)->exists()) {
             session()->flash('status', 'This key is already registered');
@@ -134,6 +187,8 @@ class WebAuthnRegister extends Component
         ]);
 
         $this->keys = WebAuthnKey::where('user_id', $this->userId)->get();
+        // Invalidate registration challenge after successful registration
+        session()->forget('webauthn_register_challenge');
         $this->closeModal();
     }
 

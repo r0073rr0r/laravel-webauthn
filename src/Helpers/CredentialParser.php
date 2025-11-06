@@ -8,6 +8,32 @@ use Cose\Key\Key;
 
 class CredentialParser
 {
+    public static function extractRpIdHash(string $authData): string
+    {
+        return substr($authData, 0, 32) ?: '';
+    }
+
+    public static function extractFlagsByte(string $authData): int
+    {
+        if (strlen($authData) < 33) return 0;
+        return ord($authData[32]);
+    }
+
+    public static function isUserPresent(string $authData): bool
+    {
+        return (self::extractFlagsByte($authData) & 0x01) === 0x01;
+    }
+
+    public static function isUserVerified(string $authData): bool
+    {
+        return (self::extractFlagsByte($authData) & 0x04) === 0x04;
+    }
+
+    public static function rpIdHashMatches(string $authData, string $rpId): bool
+    {
+        $expected = hash('sha256', $rpId, true);
+        return hash_equals(self::extractRpIdHash($authData), $expected);
+    }
     public static function extractCounter(string $authData): int
     {
         if (strlen($authData) < 37) return 0;
@@ -39,5 +65,15 @@ class CredentialParser
         $cborCose = $decoderCose->decode($stream);
         $coseKey = Key::createFromData($cborCose->normalize());
         return $coseKey->asPEM();
+    }
+
+    public static function extractCoseAlgorithm(string $cosePublicKey): ?int
+    {
+        $stream = new StringStream($cosePublicKey);
+        $decoderCose = new Decoder;
+        $cborCose = $decoderCose->decode($stream);
+        $map = $cborCose->normalize();
+        // Per COSE, key 3 => alg
+        return isset($map[3]) ? (int) $map[3] : null;
     }
 }
