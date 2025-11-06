@@ -42,7 +42,6 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: php
           build-mode: manual
           queries: "security-extended security-and-quality"
 
