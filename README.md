@@ -8,7 +8,8 @@
 [![GitHub Stars](https://img.shields.io/github/stars/r0073rr0r/laravel-webauthn?style=social)](https://github.com/r0073rr0r/laravel-webauthn/stargazers)
 [![GitHub Issues](https://img.shields.io/github/issues/r0073rr0r/laravel-webauthn)](https://github.com/r0073rr0r/laravel-webauthn/issues)
 [![GitHub Forks](https://img.shields.io/github/forks/r0073rr0r/laravel-webauthn?style=social)](https://github.com/r0073rr0r/laravel-webauthn/network)
-[![CodeQL](https://github.com/r0073rr0r/laravel-webauthn/workflows/CodeQL%20(Composer%20Package)/badge.svg)](https://github.com/r0073rr0r/laravel-webauthn/actions/workflows/codeql.yml)
+[![CodeQL](https://github.com/r0073rr0r/laravel-webauthn/workflows/CodeQL/badge.svg)](https://github.com/r0073rr0r/laravel-webauthn/actions/workflows/codeql.yml)
+[![PHP Composer](https://github.com/r0073rr0r/laravel-webauthn/workflows/PHP%20Composer/badge.svg)](https://github.com/r0073rr0r/laravel-webauthn/actions/workflows/codeql.yml)
 
 A **Laravel** package that integrates seamlessly with **Jetstream** and **Livewire** to provide **WebAuthn** authentication — including support for biometric login, USB security keys, and passkeys.
 
