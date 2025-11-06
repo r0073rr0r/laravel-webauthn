@@ -42,19 +42,14 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
+          languages: php
           build-mode: manual
-          queries: |
-            security-and-quality
-            security-extended
+          queries: security-and-quality
 
-      # Manual build step (CodeQL needs a build step for PHP)
+      # Manual build step (required for PHP)
       - name: Manual build
-        if: always()
-        run: |
-          echo "Composer dependencies installed, nothing else to build."
+        run: echo "Composer dependencies installed, nothing else to build."
 
       # Run CodeQL analysis
       - name: Perform CodeQL Analysis
         uses: github/codeql-action/analyze@v4
-        with:
-          category: "codeql"
