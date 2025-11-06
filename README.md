@@ -8,6 +8,7 @@
 [![GitHub Stars](https://img.shields.io/github/stars/r0073rr0r/laravel-webauthn?style=social)](https://github.com/r0073rr0r/laravel-webauthn/stargazers)
 [![GitHub Issues](https://img.shields.io/github/issues/r0073rr0r/laravel-webauthn)](https://github.com/r0073rr0r/laravel-webauthn/issues)
 [![GitHub Forks](https://img.shields.io/github/forks/r0073rr0r/laravel-webauthn?style=social)](https://github.com/r0073rr0r/laravel-webauthn/network)
+[![CodeQL](https://github.com/r0073rr0r/laravel-webauthn/workflows/CodeQL%20(Composer%20Package)/badge.svg)](https://github.com/r0073rr0r/laravel-webauthn/actions/workflows/codeql.yml)
 
 A **Laravel** package that integrates seamlessly with **Jetstream** and **Livewire** to provide **WebAuthn** authentication — including support for biometric login, USB security keys, and passkeys.
 
@@ -35,7 +36,6 @@ If you encounter dependency errors, run:
 composer require r0073rr0r/laravel-webauthn -W 
 ```
 > **Note:** The package [`spomky-labs/cbor-php`](https://github.com/Spomky-Labs/cbor-php) depends on [`brick/math`](https://github.com/brick/math) `^0.13`.
-
 
 Publish views and config files:
 
