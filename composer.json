@@ -27,11 +27,6 @@
       "r0073rr0r\\WebAuthn\\": "src/"
     }
   },
-  "autoload-dev": {
-    "psr-4": {
-      "r0073rr0r\\WebAuthn\\Tests\\": "tests/"
-    }
-  },
   "extra": {
     "laravel": {
       "providers": [

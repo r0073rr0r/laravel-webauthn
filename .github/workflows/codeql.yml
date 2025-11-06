@@ -42,9 +42,8 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: [ 'php' ]
           build-mode: manual
-          queries: security-extended,security-and-quality
+          queries: "security-extended security-and-quality"
 
       # Manual build step (CodeQL needs a build step for PHP)
       - name: Manual build
