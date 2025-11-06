@@ -23,7 +23,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Setup PHP with required extensions
+      # Setup PHP
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -35,19 +35,22 @@ jobs:
       - name: Install Composer dependencies
         run: |
           if [ -f "composer.json" ]; then
-            echo "Installing Composer dependencies..."
             composer install --no-interaction --no-progress --prefer-dist
-          else
-            echo "composer.json not found, skipping Composer install"
           fi
 
       # Initialize CodeQL
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v4
         with:
-          languages: php
-          build-mode: none
+          languages: [ 'php' ]
+          build-mode: manual
           queries: security-extended,security-and-quality
+
+      # Manual build step (CodeQL needs a build step for PHP)
+      - name: Manual build
+        if: always()
+        run: |
+          echo "Composer dependencies installed, nothing else to build."
 
       # Run CodeQL analysis
       - name: Perform CodeQL Analysis
