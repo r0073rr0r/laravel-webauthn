@@ -20,18 +20,37 @@
     "ext-openssl": "*"
   },
   "require-dev": {
-    "laravel/pint": "^1.25"
+    "laravel/pint": "^1.25",
+    "orchestra/testbench": "^10.6",
+    "pestphp/pest": "^3.8",
+    "pestphp/pest-plugin-laravel": "^3.2",
+    "phpunit/phpunit": "^11.5"
   },
   "autoload": {
     "psr-4": {
       "r0073rr0r\\WebAuthn\\": "src/"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "r0073rr0r\\WebAuthn\\Tests\\": "tests/",
+      "App\\": "tests/Support/"
+    },
+    "files": [
+      "tests/Support/overrides.php"
+    ]
+  },
   "extra": {
     "laravel": {
       "providers": [
         "r0073rr0r\\WebAuthn\\WebAuthnServiceProvider"
       ]
+    }
+  },
+  "config": {
+    "allow-plugins": {
+      "phpstan/extension-installer": true,
+      "pestphp/pest-plugin": true
     }
   }
 }
