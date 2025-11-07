@@ -13,7 +13,12 @@ class WebAuthnServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webauthn.php', 'webauthn');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webauthn');
-        $this->loadTranslationsFrom(__DIR__.'/../lang', 'webauthn');
+        
+        // Load translations - try lang/ first (Laravel 9+), fallback to resources/lang
+        $langPath = is_dir(__DIR__.'/../lang') 
+            ? __DIR__.'/../lang' 
+            : __DIR__.'/../resources/lang';
+        $this->loadTranslationsFrom($langPath, 'webauthn');
 
         Livewire::component('webauthn-register', WebAuthnRegister::class);
         Livewire::component('webauthn-login', WebAuthnLogin::class);
