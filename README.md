@@ -235,6 +235,24 @@ You can customize the view files after publishing them:
 
 WebAuthn is a modern standard for secure passwordless authentication. This package uses browser native WebAuthn APIs for maximum security.
 
+### Security Features
+
+- **Rate Limiting**: Protects against brute force attacks with configurable limits
+- **Audit Logging**: Comprehensive logging of all WebAuthn operations for security monitoring
+- **Replay Attack Protection**: Sign counter validation prevents replay attacks
+- **Origin Validation**: Ensures requests come from allowed origins only
+- **Challenge Validation**: One-time challenges prevent replay attacks
+- **User Verification**: Optional user verification requirement for enhanced security
+
+### Supported Authenticators
+
+This package supports a wide range of WebAuthn authenticators:
+
+- ✅ **Chrome/Edge passkeys** (biometric authentication) - EC2 P-256
+- ✅ **YubiKey 5 series** (USB security keys) - EC2 P-256 or RSA
+- ✅ **Apple Touch ID / Face ID** (via Safari) - EC2 P-256
+- ✅ **Other hardware security keys** - Various algorithms (ES256, ES384, ES512, RS256)
+
 ## 📝 License
 
 MIT License
