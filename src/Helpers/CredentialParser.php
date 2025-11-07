@@ -176,29 +176,16 @@ class CredentialParser
         $x = null;
         $y = null;
         
-        // First, try to find crv - it should be a small integer value
-        foreach ([-2, '-2'] as $key) {
-            if (isset($normalized[$key])) {
-                $val = $normalized[$key];
-                // crv should be a small integer (1, 2, or 3) or a single byte
-                if (is_int($val) && $val >= 1 && $val <= 3) {
-                    $crv = $val;
-                    break;
-                } elseif (is_string($val) && strlen($val) === 1) {
-                    $intVal = ord($val);
-                    if ($intVal >= 1 && $intVal <= 3) {
-                        $crv = $intVal;
-                        break;
-                    }
-                }
-            }
-        }
+        // First, check if -2 is a binary string (x coordinate) - if so, crv is not in -2
+        $val2 = $normalized[-2] ?? $keyData[-2] ?? null;
+        $isVal2Binary = is_string($val2) && strlen($val2) > 1;
         
-        // If crv not found, try from keyData
-        if ($crv === null) {
+        // Only try to get crv from -2 if it's not a binary string
+        if (! $isVal2Binary) {
             foreach ([-2, '-2'] as $key) {
-                if (isset($keyData[$key])) {
-                    $val = $keyData[$key];
+                if (isset($normalized[$key])) {
+                    $val = $normalized[$key];
+                    // crv should be a small integer (1, 2, or 3) or a single byte
                     if (is_int($val) && $val >= 1 && $val <= 3) {
                         $crv = $val;
                         break;
@@ -211,46 +198,79 @@ class CredentialParser
                     }
                 }
             }
+            
+            // If crv not found, try from keyData
+            if ($crv === null) {
+                foreach ([-2, '-2'] as $key) {
+                    if (isset($keyData[$key])) {
+                        $val = $keyData[$key];
+                        if (is_int($val) && $val >= 1 && $val <= 3) {
+                            $crv = $val;
+                            break;
+                        } elseif (is_string($val) && strlen($val) === 1) {
+                            $intVal = ord($val);
+                            if ($intVal >= 1 && $intVal <= 3) {
+                                $crv = $intVal;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
         
         // Get x and y coordinates - these should be longer binary strings
-        foreach ([-3, '-3'] as $key) {
-            if (isset($normalized[$key])) {
-                $val = $normalized[$key];
-                // x should be a binary string (typically 32 bytes for P-256)
-                if (is_string($val) && strlen($val) > 1) {
-                    $x = $val;
-                    break;
-                }
-            }
-        }
+        // In some COSE implementations, -2 might be x and -3 might be y (instead of -3=x, -4=y)
+        // Try both interpretations
         
-        foreach ([-4, '-4'] as $key) {
-            if (isset($normalized[$key])) {
-                $val = $normalized[$key];
-                // y should be a binary string (typically 32 bytes for P-256)
-                if (is_string($val) && strlen($val) > 1) {
-                    $y = $val;
-                    break;
-                }
-            }
-        }
+        // First, check if -2 is a long binary string (x coordinate) and -3 is y
+        $val2 = $normalized[-2] ?? $keyData[-2] ?? null;
+        $val3 = $normalized[-3] ?? $keyData[-3] ?? null;
         
-        // If not found in normalized, try keyData
-        if ($x === null) {
+        if (is_string($val2) && strlen($val2) > 1 && is_string($val3) && strlen($val3) > 1) {
+            // Both are binary strings - likely x and y coordinates
+            $x = $val2;
+            $y = $val3;
+        } else {
+            // Try standard COSE format: -3 = x, -4 = y
             foreach ([-3, '-3'] as $key) {
-                if (isset($keyData[$key]) && is_string($keyData[$key]) && strlen($keyData[$key]) > 1) {
-                    $x = $keyData[$key];
-                    break;
+                if (isset($normalized[$key])) {
+                    $val = $normalized[$key];
+                    // x should be a binary string (typically 32 bytes for P-256)
+                    if (is_string($val) && strlen($val) > 1) {
+                        $x = $val;
+                        break;
+                    }
                 }
             }
-        }
-        
-        if ($y === null) {
+            
             foreach ([-4, '-4'] as $key) {
-                if (isset($keyData[$key]) && is_string($keyData[$key]) && strlen($keyData[$key]) > 1) {
-                    $y = $keyData[$key];
-                    break;
+                if (isset($normalized[$key])) {
+                    $val = $normalized[$key];
+                    // y should be a binary string (typically 32 bytes for P-256)
+                    if (is_string($val) && strlen($val) > 1) {
+                        $y = $val;
+                        break;
+                    }
+                }
+            }
+            
+            // If not found in normalized, try keyData
+            if ($x === null) {
+                foreach ([-3, '-3'] as $key) {
+                    if (isset($keyData[$key]) && is_string($keyData[$key]) && strlen($keyData[$key]) > 1) {
+                        $x = $keyData[$key];
+                        break;
+                    }
+                }
+            }
+            
+            if ($y === null) {
+                foreach ([-4, '-4'] as $key) {
+                    if (isset($keyData[$key]) && is_string($keyData[$key]) && strlen($keyData[$key]) > 1) {
+                        $y = $keyData[$key];
+                        break;
+                    }
                 }
             }
         }
