@@ -2,8 +2,8 @@
     <x-webauthn::form-webauthn-section>
         <x-slot name="title">{{__('webauthn::webauthn.registered_security_keys')}}</x-slot>
         <x-slot name="description">
-            {{ __('webauthn::webauthn.add_passkey') }}
-            {{ __('webauthn::webauthn.setup_passkey') }}
+            {{ __('webauthn::webauthn.webauthn_add_passkey') }}
+            {{ __('webauthn::webauthn.webauthn_setup_passkey') }}
         </x-slot>
 
         <x-slot name="form">
@@ -42,16 +42,16 @@
         </x-slot>
 
         <x-slot name="actions">
-            <x-button wire:click="openModal">{{__('webauthn::webauthn.register_key')}}</x-button>
+            <x-button wire:click="openModal">{{__('webauthn::webauthn.webauthn_register_key')}}</x-button>
         </x-slot>
     </x-webauthn::form-webauthn-section>
 
     @if($showModal)
         <div class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50 flex items-center justify-center">
             <div class="relative p-5 border w-96 shadow-lg rounded-md bg-white">
-                <h3 class="text-lg font-medium text-gray-900">{{__('webauthn::webauthn.name_your_key')}}</h3>
+                <h3 class="text-lg font-medium text-gray-900">{{__('webauthn::webauthn.webauthn_name_your_key')}}</h3>
                 <input type="text" wire:model="keyName"
-                       placeholder="{{__('webauthn::webauthn.key_name_placeholder')}}"
+                       placeholder="{{__('webauthn::webauthn.webauthn_key_name_placeholder')}}"
                        class="mt-2 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-300 focus:ring focus:ring-indigo-200 focus:ring-opacity-50 px-3 py-2">
                 <div class="mt-4 flex justify-end">
                     <x-secondary-button wire:click="closeModal" class="mr-2">{{__('webauthn::webauthn.Cancel')}}</x-secondary-button>

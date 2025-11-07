@@ -63,11 +63,18 @@ Publish all package resources (views, translations, and public assets) with a si
 php artisan vendor:publish --tag=webauthn
 ```
 
-**Note:** Translations are automatically loaded from the package. If you want to customize translations, publish them using:
-```bash
-php artisan vendor:publish --tag=webauthn
-```
-This will copy the translation files to your `lang/vendor/webauthn` directory, where you can customize them.
+This will also copy the translation files to your `lang/vendor/webauthn` directory, where you can customize them.
+
+> **Troubleshooting:** If you see translation keys instead of translated text (e.g., `webauthn::webauthn.add_passkey`):
+> 
+> 1. **Clear all caches:**
+>    ```bash
+>    php artisan config:clear
+>    php artisan cache:clear
+>    php artisan view:clear
+>    composer dump-autoload
+>    ```
+
 
 Migrate database tables:
 
@@ -101,7 +108,7 @@ Add the component to your Blade view (_I added it in `resources/views/profile/sh
 </a>
 
 ```bladehtml
- <livewire:web-authn-register />
+ <livewire:webauthn-register />
  ```
 
 This component allows users to register their WebAuthn device (fingerprint, Face ID, USB security key, etc.).
@@ -115,7 +122,7 @@ Add the component to your Blade view (_I added it in `resources/views/auth/login
 </a>
 
 ```bladehtml
- <livewire:web-authn-login />
+ <livewire:webauthn-login />
  ```
 
 This component allows users to log in using their previously registered WebAuthn device.
