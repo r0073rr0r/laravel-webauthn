@@ -210,6 +210,59 @@ Enable audit logging for security monitoring:
 
 > **Note:** The `'daily'` channel does NOT send emails. It only writes to log files. If you need email notifications, configure a custom log channel in `config/logging.php` that uses a mail driver.
 
+#### Email Notifications for Audit Logs
+
+If you want to receive email notifications for WebAuthn operations, you can configure a custom log channel with email support:
+
+**Step 1:** Add a custom channel in `config/logging.php`:
+
+```php
+// config/logging.php
+'channels' => [
+    // ... existing channels ...
+    
+    'webauthn-email' => [
+        'driver' => 'mail',
+        'level' => 'info',
+        'to' => env('WEBAUTHN_AUDIT_EMAIL', 'admin@example.com'),
+        'subject' => 'WebAuthn Security Event',
+    ],
+],
+```
+
+**Step 2:** Configure the email channel in your `.env`:
+
+```env
+WEBAUTHN_AUDIT_LOG_CHANNEL=webauthn-email
+WEBAUTHN_AUDIT_EMAIL=admin@example.com
+```
+
+**Step 3:** Make sure your Laravel mail configuration is set up correctly in `.env`:
+
+```env
+MAIL_MAILER=smtp
+MAIL_HOST=smtp.mailtrap.io
+MAIL_PORT=2525
+MAIL_USERNAME=your-username
+MAIL_PASSWORD=your-password
+MAIL_ENCRYPTION=tls
+MAIL_FROM_ADDRESS=noreply@example.com
+MAIL_FROM_NAME="${APP_NAME}"
+```
+
+**Alternative:** For more advanced email notifications (e.g., only on errors, formatted emails), you can create a custom channel with Slack, Discord, or other notification services:
+
+```php
+// config/logging.php
+'webauthn-slack' => [
+    'driver' => 'slack',
+    'url' => env('WEBAUTHN_SLACK_WEBHOOK_URL'),
+    'username' => 'WebAuthn Bot',
+    'emoji' => ':warning:',
+    'level' => 'info',
+],
+```
+
 Audit logs include:
 - Key registrations (with user ID, key name, credential ID, AAGUID)
 - Login attempts (successful and failed)
