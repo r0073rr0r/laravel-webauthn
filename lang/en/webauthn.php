@@ -27,5 +27,30 @@ return [
     'sign_in_with_passkey' => 'Sign in with Passkey',
     'delete_key_confirm' => 'Are you sure you want to delete this key?',
 
-];
+    // Error messages
+    'error_credential_not_found' => 'Your security key was not recognized. Please try again or use a different key.',
+    'error_invalid_signature' => 'Signature is not valid. Please try again.',
+    'error_challenge_mismatch' => 'Session expired. Please refresh the page and try again.',
+    'error_replay_attack' => 'Security error: detected replay attack attempt. Please try again.',
+    'error_origin_not_allowed' => 'Request from unauthorized origin. Please contact administrator.',
+    'error_invalid_client_data' => 'Invalid data. Please try again.',
+    'error_invalid_type' => 'Invalid request type.',
+    'error_rp_id_mismatch' => 'Domain verification error.',
+    'error_user_not_present' => 'User not present. Please try again.',
+    'error_user_not_verified' => 'User not verified. Please use verification.',
+    'error_invalid_public_key' => 'Invalid public key format.',
+    'error_algorithm_not_allowed' => 'Algorithm not allowed.',
+    'error_key_already_registered' => 'This key is already registered.',
+    'error_invalid_credential_data' => 'Invalid credential data.',
+    'error_key_name_required' => 'Key name is required.',
+    'error_key_name_too_short' => 'Key name must be at least :min characters.',
+    'error_key_name_too_long' => 'Key name can be at most :max characters.',
+    'error_rate_limit_exceeded' => 'Too many attempts. Please wait :seconds seconds.',
+    'error_login_failed' => 'Login failed. Please try again.',
+    'error_registration_failed' => 'Registration failed. Please try again.',
 
+    // Success messages
+    'success_key_registered' => 'Key registered successfully!',
+    'success_key_deleted' => 'Key deleted successfully!',
+    'success_login' => 'Login successful!',
+];

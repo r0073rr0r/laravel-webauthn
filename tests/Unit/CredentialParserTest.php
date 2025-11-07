@@ -18,9 +18,7 @@ it('extracts counter from authData safely', function () {
     $counter = 12345;
     $counterBytes = pack('N', $counter);
     $rest = str_repeat("\x00", 8);
-    $authData = $prefix . $counterBytes . $rest;
+    $authData = $prefix.$counterBytes.$rest;
 
     expect(CredentialParser::extractCounter($authData))->toBe($counter);
 });
-
-

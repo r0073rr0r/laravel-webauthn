@@ -58,7 +58,7 @@ return new class extends Migration
                 });
             } catch (\Exception $e) {
                 // Index might already exist, ignore
-                if (strpos($e->getMessage(), 'already exists') === false && 
+                if (strpos($e->getMessage(), 'already exists') === false &&
                     strpos($e->getMessage(), 'duplicate') === false) {
                     throw $e;
                 }

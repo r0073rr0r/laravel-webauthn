@@ -32,7 +32,7 @@
                         id: base64urlToBuffer(k.id),
                         type: k.type,
                     })),
-                    timeout: 60000,
+                    timeout: @js(config('webauthn.timeout', 60000)),
                     userVerification: 'preferred'
                 };
 

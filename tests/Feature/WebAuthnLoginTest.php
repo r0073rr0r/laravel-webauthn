@@ -8,6 +8,13 @@ use r0073rr0r\WebAuthn\Livewire\WebAuthnLogin;
 use r0073rr0r\WebAuthn\Models\WebAuthnKey;
 use r0073rr0r\WebAuthn\Tests\Support\OpenSslMock;
 
+beforeEach(function () {
+    // Disable rate limiting in tests
+    config()->set('webauthn.rate_limit.enabled', false);
+    // Disable audit logging in tests
+    config()->set('webauthn.audit_log.enabled', false);
+});
+
 it('mounts and sets challenge when session is empty', function () {
     Livewire::test(WebAuthnLogin::class)
         ->assertSet('challenge', fn ($v) => is_string($v) && $v !== '')
@@ -73,7 +80,7 @@ it('authenticates successfully on valid credential and signature', function () {
     $rpIdHash = hash('sha256', config('webauthn.rp_id'), true);
     // Flags: UP=1, UV=0x04 (we can include UV to test both later)
     $flags = chr(0x01 | 0x04);
-    $authenticatorData = $rpIdHash . $flags . pack('N', $signCount) . str_repeat("\x00", 8);
+    $authenticatorData = $rpIdHash.$flags.pack('N', $signCount).str_repeat("\x00", 8);
 
     // Make signature "valid" via our override
     OpenSslMock::setReturn(1);
@@ -125,7 +132,7 @@ it('invalidates challenge after attempt', function () {
     ]);
     $rpIdHash = hash('sha256', config('webauthn.rp_id'), true);
     $flags = chr(0x01 | 0x04);
-    $authenticatorData = $rpIdHash . $flags . pack('N', 1) . str_repeat("\x00", 8);
+    $authenticatorData = $rpIdHash.$flags.pack('N', 1).str_repeat("\x00", 8);
 
     OpenSslMock::setReturn(1);
     $cred = [
@@ -174,7 +181,7 @@ it('fails when UV is required but not present', function () {
     $rpIdHash = hash('sha256', config('webauthn.rp_id'), true);
     // Flags: only UP, no UV
     $flags = chr(0x01);
-    $authenticatorData = $rpIdHash . $flags . pack('N', 1) . str_repeat("\x00", 8);
+    $authenticatorData = $rpIdHash.$flags.pack('N', 1).str_repeat("\x00", 8);
 
     OpenSslMock::setReturn(1);
     $cred = [
@@ -262,5 +269,3 @@ it('does not authenticate on invalid signature', function () {
     $component->call('loginWithPasskey', json_encode($cred));
     expect(Auth::check())->toBeFalse();
 });
-
-

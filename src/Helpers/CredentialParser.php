@@ -15,7 +15,10 @@ class CredentialParser
 
     public static function extractFlagsByte(string $authData): int
     {
-        if (strlen($authData) < 33) return 0;
+        if (strlen($authData) < 33) {
+            return 0;
+        }
+
         return ord($authData[32]);
     }
 
@@ -32,12 +35,17 @@ class CredentialParser
     public static function rpIdHashMatches(string $authData, string $rpId): bool
     {
         $expected = hash('sha256', $rpId, true);
+
         return hash_equals(self::extractRpIdHash($authData), $expected);
     }
+
     public static function extractCounter(string $authData): int
     {
-        if (strlen($authData) < 37) return 0;
+        if (strlen($authData) < 37) {
+            return 0;
+        }
         $counterBytes = substr($authData, 33, 4);
+
         return strlen($counterBytes) === 4 ? unpack('N', $counterBytes)[1] : 0;
     }
 
@@ -49,7 +57,10 @@ class CredentialParser
     public static function base64url_decode(string $data): string
     {
         $remainder = strlen($data) % 4;
-        if ($remainder) $data .= str_repeat('=', 4 - $remainder);
+        if ($remainder) {
+            $data .= str_repeat('=', 4 - $remainder);
+        }
+
         return base64_decode(strtr($data, '-_', '+/'));
     }
 
@@ -65,17 +76,17 @@ class CredentialParser
         $cborCose = $decoderCose->decode($stream);
         $normalized = $cborCose->normalize();
         $coseKey = Key::createFromData($normalized);
-        
+
         // Check if asPEM() method exists (for compatibility with different versions)
         if (method_exists($coseKey, 'asPEM')) {
             return $coseKey->asPEM();
         }
-        
+
         // Fallback: try toPEM() if asPEM() doesn't exist
         if (method_exists($coseKey, 'toPEM')) {
             return $coseKey->toPEM();
         }
-        
+
         // Try getData() method to get key data
         if (method_exists($coseKey, 'getData')) {
             try {
@@ -87,7 +98,7 @@ class CredentialParser
                 // Continue to next fallback
             }
         }
-        
+
         // Try toArray() method if it exists
         if (method_exists($coseKey, 'toArray')) {
             try {
@@ -99,7 +110,7 @@ class CredentialParser
                 // Continue to next fallback
             }
         }
-        
+
         // Try get() method with different parameters
         if (method_exists($coseKey, 'get')) {
             // Try to get all data using different key indices
@@ -114,12 +125,13 @@ class CredentialParser
                         -2 => $coseKey->get(-2) ?? null, // crv
                         1 => $coseKey->get(1) ?? null,  // kty
                     ];
+
                     return self::convertKeyDataToPem($keyData, $normalized);
                 }
             } catch (\Exception $e) {
                 // Continue to next fallback
             }
-            
+
             // Try getting RSA parameters
             try {
                 $n = $coseKey->get(-2); // RSA modulus
@@ -130,18 +142,19 @@ class CredentialParser
                         -3 => $e,
                         1 => $coseKey->get(1) ?? null,  // kty
                     ];
+
                     return self::convertKeyDataToPem($keyData, $normalized);
                 }
             } catch (\Exception $e) {
                 // Continue to next fallback
             }
         }
-        
+
         // Last resort: manual conversion from normalized COSE data
         // The normalized array should contain all the COSE key data
         return self::convertKeyDataToPem($normalized, $normalized);
     }
-    
+
     /**
      * Convert COSE key data to PEM format manually
      */
@@ -149,10 +162,10 @@ class CredentialParser
     {
         // Get algorithm (key 3 in COSE)
         $alg = $keyData[3] ?? $normalized[3] ?? null;
-        
+
         // Get key type (key 1 in COSE: 2 = EC2, 3 = RSA)
         $kty = $keyData[1] ?? $normalized[1] ?? null;
-        
+
         if ($kty === 2) {
             // EC2 key (Elliptic Curve)
             return self::convertEc2ToPem($keyData, $normalized);
@@ -160,10 +173,10 @@ class CredentialParser
             // RSA key
             return self::convertRsaToPem($keyData, $normalized);
         }
-        
+
         throw new \RuntimeException('Unsupported key type. Only EC2 (kty=2) and RSA (kty=3) are supported.');
     }
-    
+
     /**
      * Convert EC2 (Elliptic Curve) COSE key to PEM
      */
@@ -175,11 +188,11 @@ class CredentialParser
         $crv = null;
         $x = null;
         $y = null;
-        
+
         // First, check if -2 is a binary string (x coordinate) - if so, crv is not in -2
         $val2 = $normalized[-2] ?? $keyData[-2] ?? null;
         $isVal2Binary = is_string($val2) && strlen($val2) > 1;
-        
+
         // Only try to get crv from -2 if it's not a binary string
         if (! $isVal2Binary) {
             foreach ([-2, '-2'] as $key) {
@@ -198,7 +211,7 @@ class CredentialParser
                     }
                 }
             }
-            
+
             // If crv not found, try from keyData
             if ($crv === null) {
                 foreach ([-2, '-2'] as $key) {
@@ -218,15 +231,15 @@ class CredentialParser
                 }
             }
         }
-        
+
         // Get x and y coordinates - these should be longer binary strings
         // In some COSE implementations, -2 might be x and -3 might be y (instead of -3=x, -4=y)
         // Try both interpretations
-        
+
         // First, check if -2 is a long binary string (x coordinate) and -3 is y
         $val2 = $normalized[-2] ?? $keyData[-2] ?? null;
         $val3 = $normalized[-3] ?? $keyData[-3] ?? null;
-        
+
         if (is_string($val2) && strlen($val2) > 1 && is_string($val3) && strlen($val3) > 1) {
             // Both are binary strings - likely x and y coordinates
             $x = $val2;
@@ -243,7 +256,7 @@ class CredentialParser
                     }
                 }
             }
-            
+
             foreach ([-4, '-4'] as $key) {
                 if (isset($normalized[$key])) {
                     $val = $normalized[$key];
@@ -254,7 +267,7 @@ class CredentialParser
                     }
                 }
             }
-            
+
             // If not found in normalized, try keyData
             if ($x === null) {
                 foreach ([-3, '-3'] as $key) {
@@ -264,7 +277,7 @@ class CredentialParser
                     }
                 }
             }
-            
+
             if ($y === null) {
                 foreach ([-4, '-4'] as $key) {
                     if (isset($keyData[$key]) && is_string($keyData[$key]) && strlen($keyData[$key]) > 1) {
@@ -274,7 +287,7 @@ class CredentialParser
                 }
             }
         }
-        
+
         if ($x === null || $y === null) {
             // Debug: log what we have
             $safeKeyData = self::sanitizeForDebug($keyData);
@@ -285,13 +298,13 @@ class CredentialParser
                 'keyData' => $safeKeyData,
                 'normalized' => $safeNormalized,
             ];
-            throw new \RuntimeException('Missing EC2 key coordinates (x, y). Debug: ' . json_encode($debugInfo, JSON_PARTIAL_OUTPUT_ON_ERROR));
+            throw new \RuntimeException('Missing EC2 key coordinates (x, y). Debug: '.json_encode($debugInfo, JSON_PARTIAL_OUTPUT_ON_ERROR));
         }
-        
+
         // Convert coordinates to binary string
         $xBin = self::normalizeKeyValue($x);
         $yBin = self::normalizeKeyValue($y);
-        
+
         // If crv is still null, try to determine from key size
         if ($crv === null) {
             // P-256: 32 bytes, P-384: 48 bytes, P-521: 66 bytes
@@ -300,12 +313,12 @@ class CredentialParser
                 32 => 1,  // P-256
                 48 => 2,  // P-384
                 66 => 3,  // P-521
-                default => throw new \RuntimeException("Unable to determine EC curve from key size: {$keySize} bytes. x: " . bin2hex($xBin) . ", y: " . bin2hex($yBin)),
+                default => throw new \RuntimeException("Unable to determine EC curve from key size: {$keySize} bytes. x: ".bin2hex($xBin).', y: '.bin2hex($yBin)),
             };
         }
-        
+
         $crvInt = $crv;
-        
+
         // Determine curve name based on crv
         $curveName = match ($crvInt) {
             1 => 'prime256v1',  // P-256
@@ -313,7 +326,7 @@ class CredentialParser
             3 => 'secp521r1',   // P-521
             default => throw new \RuntimeException("Unsupported EC curve: {$crvInt}"),
         };
-        
+
         // Try using OpenSSL to create the key directly
         if (function_exists('openssl_pkey_new') && function_exists('openssl_pkey_get_details')) {
             try {
@@ -322,7 +335,7 @@ class CredentialParser
                     'curve_name' => $curveName,
                     'private_key_type' => OPENSSL_KEYTYPE_EC,
                 ];
-                
+
                 // Generate a temporary private key to extract the public key structure
                 $tempKey = openssl_pkey_new($config);
                 if ($tempKey !== false) {
@@ -336,7 +349,7 @@ class CredentialParser
                 // Fall through to ASN.1 conversion
             }
         }
-        
+
         // Use ASN.1 conversion (this should work, but we'll validate it)
         $curveOid = match ($crvInt) {
             1 => '1.2.840.10045.3.1.7', // P-256
@@ -344,17 +357,17 @@ class CredentialParser
             3 => '1.3.132.0.35',         // P-521
             default => throw new \RuntimeException("Unsupported EC curve: {$crvInt}"),
         };
-        
+
         // Create public key point (0x04 + x + y for uncompressed)
-        $publicKeyPoint = "\x04" . $xBin . $yBin;
-        
+        $publicKeyPoint = "\x04".$xBin.$yBin;
+
         // Build ASN.1 structure for EC public key
         $publicKeyInfo = self::buildEcPublicKeyInfo($publicKeyPoint, $curveOid);
-        
-        $pem = "-----BEGIN PUBLIC KEY-----\n" .
-               chunk_split(base64_encode($publicKeyInfo), 64, "\n") .
+
+        $pem = "-----BEGIN PUBLIC KEY-----\n".
+               chunk_split(base64_encode($publicKeyInfo), 64, "\n").
                "-----END PUBLIC KEY-----\n";
-        
+
         // Validate the PEM with OpenSSL before returning
         if (function_exists('openssl_pkey_get_public')) {
             $resource = openssl_pkey_get_public($pem);
@@ -364,10 +377,10 @@ class CredentialParser
                 while (($error = openssl_error_string()) !== false) {
                     $errors[] = $error;
                 }
-                
+
                 // Try to fix the ASN.1 encoding
                 $pem = self::fixEcPublicKeyPem($xBin, $yBin, $curveOid, $curveName);
-                
+
                 // Validate again
                 $resource = openssl_pkey_get_public($pem);
                 if ($resource === false) {
@@ -386,10 +399,10 @@ class CredentialParser
                 openssl_free_key($resource);
             }
         }
-        
+
         return $pem;
     }
-    
+
     /**
      * Normalize key value to binary string
      */
@@ -398,18 +411,18 @@ class CredentialParser
         if (is_string($value)) {
             return $value;
         }
-        
+
         if (is_int($value)) {
             return self::intToBytes($value);
         }
-        
+
         if (is_object($value) && method_exists($value, '__toString')) {
             return (string) $value;
         }
-        
+
         throw new \RuntimeException('Unable to normalize key value to binary string');
     }
-    
+
     /**
      * Normalize COSE integer value (can be int, string, or binary)
      */
@@ -418,7 +431,7 @@ class CredentialParser
         if (is_int($value)) {
             return $value;
         }
-        
+
         if (is_string($value)) {
             // If it's a single byte string, convert to int
             if (strlen($value) === 1) {
@@ -434,13 +447,14 @@ class CredentialParser
                 for ($i = 0; $i < strlen($value); $i++) {
                     $int = ($int << 8) | ord($value[$i]);
                 }
+
                 return $int;
             }
         }
-        
+
         return null;
     }
-    
+
     /**
      * Convert RSA COSE key to PEM
      */
@@ -449,55 +463,55 @@ class CredentialParser
         // RSA keys: -1 = kty, -2 = n (modulus), -3 = e (exponent)
         $n = $keyData[-2] ?? $normalized[-2] ?? null;
         $e = $keyData[-3] ?? $normalized[-3] ?? null;
-        
+
         if ($n === null || $e === null) {
             throw new \RuntimeException('Missing RSA key parameters (n, e)');
         }
-        
+
         // Convert to binary if needed
         $nBin = self::normalizeKeyValue($n);
         $eBin = self::normalizeKeyValue($e);
-        
+
         // Ensure proper ASN.1 encoding (unsigned integers with leading zero if needed)
         if (strlen($nBin) > 0 && (ord($nBin[0]) & 0x80)) {
-            $nBin = "\x00" . $nBin;
+            $nBin = "\x00".$nBin;
         }
         if (strlen($eBin) > 0 && (ord($eBin[0]) & 0x80)) {
-            $eBin = "\x00" . $eBin;
+            $eBin = "\x00".$eBin;
         }
-        
+
         // Build ASN.1 structure for RSA public key
         $publicKeyInfo = self::buildRsaPublicKeyInfo($nBin, $eBin);
-        
-        return "-----BEGIN PUBLIC KEY-----\n" .
-               chunk_split(base64_encode($publicKeyInfo), 64, "\n") .
+
+        return "-----BEGIN PUBLIC KEY-----\n".
+               chunk_split(base64_encode($publicKeyInfo), 64, "\n").
                "-----END PUBLIC KEY-----\n";
     }
-    
+
     /**
      * Build ASN.1 structure for EC public key
      */
     private static function buildEcPublicKeyInfo(string $publicKeyPoint, string $curveOid): string
     {
         // EC public key: BIT STRING containing the public key point
-        $publicKeyBitString = "\x03" . self::encodeLength(strlen($publicKeyPoint) + 1) . "\x00" . $publicKeyPoint;
-        
+        $publicKeyBitString = "\x03".self::encodeLength(strlen($publicKeyPoint) + 1)."\x00".$publicKeyPoint;
+
         // AlgorithmIdentifier: id-ecPublicKey + namedCurve
         // id-ecPublicKey OID: 1.2.840.10045.2.1
         $ecPublicKeyOid = "\x2a\x86\x48\xce\x3d\x02\x01"; // 1.2.840.10045.2.1
         $curveOidBytes = self::oidToBytes($curveOid);
-        
+
         // SEQUENCE { OID ecPublicKey, OID namedCurve }
-        $algorithmIdentifier = "\x30" . self::encodeLength(strlen($ecPublicKeyOid) + strlen($curveOidBytes) + 4) .
-                              "\x06\x07" . $ecPublicKeyOid .  // id-ecPublicKey
-                              "\x06" . self::encodeLength(strlen($curveOidBytes)) . $curveOidBytes; // namedCurve
-        
+        $algorithmIdentifier = "\x30".self::encodeLength(strlen($ecPublicKeyOid) + strlen($curveOidBytes) + 4).
+                              "\x06\x07".$ecPublicKeyOid.  // id-ecPublicKey
+                              "\x06".self::encodeLength(strlen($curveOidBytes)).$curveOidBytes; // namedCurve
+
         // SubjectPublicKeyInfo: SEQUENCE { AlgorithmIdentifier, BIT STRING }
-        $subjectPublicKeyInfo = $algorithmIdentifier . $publicKeyBitString;
-        
-        return "\x30" . self::encodeLength(strlen($subjectPublicKeyInfo)) . $subjectPublicKeyInfo;
+        $subjectPublicKeyInfo = $algorithmIdentifier.$publicKeyBitString;
+
+        return "\x30".self::encodeLength(strlen($subjectPublicKeyInfo)).$subjectPublicKeyInfo;
     }
-    
+
     /**
      * Fix EC public key PEM using OpenSSL if available
      */
@@ -511,7 +525,7 @@ class CredentialParser
                     'curve_name' => $curveName,
                     'private_key_type' => OPENSSL_KEYTYPE_EC,
                 ];
-                
+
                 $tempKey = openssl_pkey_new($config);
                 if ($tempKey !== false) {
                     $details = openssl_pkey_get_details($tempKey);
@@ -526,39 +540,39 @@ class CredentialParser
                 // Continue with ASN.1 method
             }
         }
-        
+
         // Return the original PEM - the issue might be elsewhere
-        $publicKeyPoint = "\x04" . $xBin . $yBin;
+        $publicKeyPoint = "\x04".$xBin.$yBin;
         $publicKeyInfo = self::buildEcPublicKeyInfo($publicKeyPoint, $curveOid);
-        
-        return "-----BEGIN PUBLIC KEY-----\n" .
-               chunk_split(base64_encode($publicKeyInfo), 64, "\n") .
+
+        return "-----BEGIN PUBLIC KEY-----\n".
+               chunk_split(base64_encode($publicKeyInfo), 64, "\n").
                "-----END PUBLIC KEY-----\n";
     }
-    
+
     /**
      * Build ASN.1 structure for RSA public key
      */
     private static function buildRsaPublicKeyInfo(string $n, string $e): string
     {
         // RSA public key: SEQUENCE { n INTEGER, e INTEGER }
-        $rsaPublicKey = "\x02" . self::encodeLength(strlen($n)) . $n .
-                       "\x02" . self::encodeLength(strlen($e)) . $e;
-        $rsaPublicKey = "\x30" . self::encodeLength(strlen($rsaPublicKey)) . $rsaPublicKey;
-        
+        $rsaPublicKey = "\x02".self::encodeLength(strlen($n)).$n.
+                       "\x02".self::encodeLength(strlen($e)).$e;
+        $rsaPublicKey = "\x30".self::encodeLength(strlen($rsaPublicKey)).$rsaPublicKey;
+
         // AlgorithmIdentifier: rsaEncryption
         $rsaEncryptionOid = "\x2a\x86\x48\x86\xf7\x0d\x01\x01\x01"; // 1.2.840.113549.1.1.1
-        $algorithmIdentifier = "\x30" . self::encodeLength(strlen($rsaEncryptionOid) + 5) .
-                              "\x06" . self::encodeLength(strlen($rsaEncryptionOid)) . $rsaEncryptionOid .
+        $algorithmIdentifier = "\x30".self::encodeLength(strlen($rsaEncryptionOid) + 5).
+                              "\x06".self::encodeLength(strlen($rsaEncryptionOid)).$rsaEncryptionOid.
                               "\x05\x00"; // NULL parameters
-        
+
         // SubjectPublicKeyInfo
-        $publicKeyBitString = "\x03" . self::encodeLength(strlen($rsaPublicKey) + 1) . "\x00" . $rsaPublicKey;
-        $subjectPublicKeyInfo = $algorithmIdentifier . $publicKeyBitString;
-        
-        return "\x30" . self::encodeLength(strlen($subjectPublicKeyInfo)) . $subjectPublicKeyInfo;
+        $publicKeyBitString = "\x03".self::encodeLength(strlen($rsaPublicKey) + 1)."\x00".$rsaPublicKey;
+        $subjectPublicKeyInfo = $algorithmIdentifier.$publicKeyBitString;
+
+        return "\x30".self::encodeLength(strlen($subjectPublicKeyInfo)).$subjectPublicKeyInfo;
     }
-    
+
     /**
      * Encode ASN.1 length
      */
@@ -571,13 +585,14 @@ class CredentialParser
         $bytes = '';
         $len = $length;
         while ($len > 0) {
-            $bytes = chr($len & 0xff) . $bytes;
+            $bytes = chr($len & 0xFF).$bytes;
             $len >>= 8;
         }
+
         // First byte: 0x80 | number of following bytes
-        return chr(0x80 | strlen($bytes)) . $bytes;
+        return chr(0x80 | strlen($bytes)).$bytes;
     }
-    
+
     /**
      * Convert OID string to bytes
      */
@@ -592,15 +607,16 @@ class CredentialParser
             } else {
                 $temp = '';
                 while ($val > 0) {
-                    $temp = chr(($val & 0x7f) | 0x80) . $temp;
+                    $temp = chr(($val & 0x7F) | 0x80).$temp;
                     $val >>= 7;
                 }
-                $bytes .= substr($temp, 0, -1) . chr(ord($temp[strlen($temp) - 1]) & 0x7f);
+                $bytes .= substr($temp, 0, -1).chr(ord($temp[strlen($temp) - 1]) & 0x7F);
             }
         }
+
         return $bytes;
     }
-    
+
     /**
      * Convert integer to bytes (big-endian)
      */
@@ -611,12 +627,13 @@ class CredentialParser
         }
         $bytes = '';
         while ($int > 0) {
-            $bytes = chr($int & 0xff) . $bytes;
+            $bytes = chr($int & 0xFF).$bytes;
             $int >>= 8;
         }
+
         return $bytes;
     }
-    
+
     /**
      * Sanitize data for debug output (convert binary to hex/base64)
      */
@@ -632,24 +649,27 @@ class CredentialParser
                     '_length' => strlen($data),
                 ];
             }
+
             return $data;
         }
-        
+
         if (is_array($data)) {
             $result = [];
             foreach ($data as $key => $value) {
                 $result[$key] = self::sanitizeForDebug($value);
             }
+
             return $result;
         }
-        
+
         if (is_object($data)) {
             if (method_exists($data, '__toString')) {
                 return self::sanitizeForDebug((string) $data);
             }
+
             return ['_type' => get_class($data)];
         }
-        
+
         return $data;
     }
 
@@ -659,6 +679,7 @@ class CredentialParser
         $decoderCose = new Decoder;
         $cborCose = $decoderCose->decode($stream);
         $map = $cborCose->normalize();
+
         // Per COSE, key 3 => alg
         return isset($map[3]) ? (int) $map[3] : null;
     }
