@@ -191,4 +191,86 @@ it('deletes only own key and refreshes the list', function () {
     expect(WebAuthnKey::find($otherKey->id))->not()->toBeNull();
 });
 
+it('converts EC2 P-256 COSE key to PEM format - Chrome passkey, YubiKey support', function () {
+    // Test EC2 P-256 (ES256) - most common, used by Chrome passkey and YubiKey
+    // This algorithm is supported by:
+    // - Chrome/Edge passkeys (biometric authentication)
+    // - YubiKey 5 series (USB security keys)
+    // - Most modern hardware security keys
+    
+    $keyData = \r0073rr0r\WebAuthn\Tests\Support\CoseKeyGenerator::generateEc2P256Array();
+    
+    // Use reflection to test convertKeyDataToPem directly
+    $reflection = new \ReflectionClass(CredentialParser::class);
+    $method = $reflection->getMethod('convertKeyDataToPem');
+    $method->setAccessible(true);
+    
+    $pem = $method->invokeArgs(null, [$keyData, $keyData]);
+    
+    // Verify PEM format is correct
+    expect($pem)->toContain('BEGIN PUBLIC KEY');
+    expect($pem)->toContain('END PUBLIC KEY');
+    expect($pem)->toMatch('/^-----BEGIN PUBLIC KEY-----/');
+    expect($pem)->toMatch('/-----END PUBLIC KEY-----\s*$/');
+    
+    // Verify structure - should have multiple lines
+    $lines = array_filter(explode("\n", $pem), fn($line) => !empty(trim($line)));
+    expect(count($lines))->toBeGreaterThan(2); // At least header, content, footer
+});
+
+it('converts RSA COSE key to PEM format - some hardware security keys', function () {
+    // Test RSA (RS256) - used by some older hardware security keys
+    // This algorithm is supported by:
+    // - Some older YubiKey models
+    // - Some enterprise security keys
+    
+    $keyData = \r0073rr0r\WebAuthn\Tests\Support\CoseKeyGenerator::generateRsaArray();
+    
+    $reflection = new \ReflectionClass(CredentialParser::class);
+    $method = $reflection->getMethod('convertKeyDataToPem');
+    $method->setAccessible(true);
+    
+    $pem = $method->invokeArgs(null, [$keyData, $keyData]);
+    
+    // Verify PEM format is correct
+    expect($pem)->toContain('BEGIN PUBLIC KEY');
+    expect($pem)->toContain('END PUBLIC KEY');
+    expect($pem)->toMatch('/^-----BEGIN PUBLIC KEY-----/');
+    expect($pem)->toMatch('/-----END PUBLIC KEY-----\s*$/');
+    
+    // Verify structure - should have multiple lines
+    $lines = array_filter(explode("\n", $pem), fn($line) => !empty(trim($line)));
+    expect(count($lines))->toBeGreaterThan(2); // At least header, content, footer
+});
+
+it('supports multiple key types for different authenticators', function () {
+    // Test that the system can handle different key types
+    // This ensures compatibility with:
+    // - Chrome passkeys (EC2 P-256)
+    // - YubiKey (EC2 P-256 or RSA)
+    // - Other hardware security keys (various algorithms)
+    
+    // EC2 P-256 (most common)
+    $ec2Key = \r0073rr0r\WebAuthn\Tests\Support\CoseKeyGenerator::generateEc2P256Array();
+    expect($ec2Key[1])->toBe(2); // kty: EC2
+    expect($ec2Key[3])->toBe(-7); // alg: ES256
+    expect($ec2Key[-2])->toBe(1); // crv: P-256
+    
+    // RSA
+    $rsaKey = \r0073rr0r\WebAuthn\Tests\Support\CoseKeyGenerator::generateRsaArray();
+    expect($rsaKey[1])->toBe(3); // kty: RSA
+    expect($rsaKey[3])->toBe(-257); // alg: RS256
+    
+    // Both should be convertible to PEM
+    $reflection = new \ReflectionClass(CredentialParser::class);
+    $method = $reflection->getMethod('convertKeyDataToPem');
+    $method->setAccessible(true);
+    
+    $ec2Pem = $method->invokeArgs(null, [$ec2Key, $ec2Key]);
+    $rsaPem = $method->invokeArgs(null, [$rsaKey, $rsaKey]);
+    
+    expect($ec2Pem)->toContain('BEGIN PUBLIC KEY');
+    expect($rsaPem)->toContain('BEGIN PUBLIC KEY');
+});
+
 
