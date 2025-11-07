@@ -81,7 +81,19 @@ class WebAuthnLogin extends Component
             $clientDataHash = hash('sha256', $clientDataJSON, true);
             $signedData = $authenticatorData.$clientDataHash;
 
-            $ok = openssl_verify($signedData, $signature, $key->credentialPublicKey, OPENSSL_ALGO_SHA256);
+            // Get public key resource from PEM
+            $publicKeyResource = openssl_pkey_get_public($key->credentialPublicKey);
+            if ($publicKeyResource === false) {
+                $errors = [];
+                while (($error = openssl_error_string()) !== false) {
+                    $errors[] = $error;
+                }
+                throw new \Exception('Invalid public key format: ' . implode('; ', $errors));
+            }
+
+            $ok = openssl_verify($signedData, $signature, $publicKeyResource, OPENSSL_ALGO_SHA256);
+            openssl_free_key($publicKeyResource);
+            
             if ($ok !== 1) {
                 throw new \Exception('Invalid signature!');
             }
