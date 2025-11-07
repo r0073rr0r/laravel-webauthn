@@ -189,26 +189,35 @@ class CredentialParser
         }
         
         if ($x === null || $y === null) {
-            // Debug: log what we have
+            // Debug: log what we have (convert binary data to hex/base64 for safe JSON encoding)
+            $safeKeyData = self::sanitizeForDebug($keyData);
+            $safeNormalized = self::sanitizeForDebug($normalized);
             $debugInfo = [
                 'keyData_keys' => array_keys($keyData),
                 'normalized_keys' => array_keys($normalized),
-                'keyData' => $keyData,
-                'normalized' => $normalized,
+                'keyData' => $safeKeyData,
+                'normalized' => $safeNormalized,
             ];
-            throw new \RuntimeException('Missing EC2 key coordinates (x, y). Debug: ' . json_encode($debugInfo));
+            throw new \RuntimeException('Missing EC2 key coordinates (x, y). Debug: ' . json_encode($debugInfo, JSON_PARTIAL_OUTPUT_ON_ERROR));
         }
         
         // Convert coordinates to binary string
         $xBin = self::normalizeKeyValue($x);
         $yBin = self::normalizeKeyValue($y);
         
+        // Normalize crv to integer (it might be a string or binary data)
+        $crvInt = self::normalizeCoseInteger($crv);
+        
+        if ($crvInt === null) {
+            throw new \RuntimeException('Missing or invalid EC curve (crv) parameter. Value: ' . (is_string($crv) ? bin2hex($crv) : var_export($crv, true)));
+        }
+        
         // Determine curve name based on crv
-        $curveName = match ($crv) {
+        $curveName = match ($crvInt) {
             1 => 'prime256v1',  // P-256
             2 => 'secp384r1',   // P-384
             3 => 'secp521r1',   // P-521
-            default => throw new \RuntimeException("Unsupported EC curve: {$crv}"),
+            default => throw new \RuntimeException("Unsupported EC curve: {$crvInt}"),
         };
         
         // Try using OpenSSL to create the key
@@ -218,11 +227,11 @@ class CredentialParser
                 $publicKeyPoint = "\x04" . $xBin . $yBin;
                 
                 // Determine curve OID based on crv
-                $curveOid = match ($crv) {
+                $curveOid = match ($crvInt) {
                     1 => '1.2.840.10045.3.1.7', // P-256
                     2 => '1.3.132.0.34',         // P-384
                     3 => '1.3.132.0.35',         // P-521
-                    default => throw new \RuntimeException("Unsupported EC curve: {$crv}"),
+                    default => throw new \RuntimeException("Unsupported EC curve: {$crvInt}"),
                 };
                 
                 // Build ASN.1 structure for EC public key
@@ -244,11 +253,11 @@ class CredentialParser
         }
         
         // Manual conversion using ASN.1
-        $curveOid = match ($crv) {
+        $curveOid = match ($crvInt) {
             1 => '1.2.840.10045.3.1.7', // P-256
             2 => '1.3.132.0.34',         // P-384
             3 => '1.3.132.0.35',         // P-521
-            default => throw new \RuntimeException("Unsupported EC curve: {$crv}"),
+            default => throw new \RuntimeException("Unsupported EC curve: {$crvInt}"),
         };
         
         // Create public key point (0x04 + x + y for uncompressed)
@@ -280,6 +289,37 @@ class CredentialParser
         }
         
         throw new \RuntimeException('Unable to normalize key value to binary string');
+    }
+    
+    /**
+     * Normalize COSE integer value (can be int, string, or binary)
+     */
+    private static function normalizeCoseInteger($value): ?int
+    {
+        if (is_int($value)) {
+            return $value;
+        }
+        
+        if (is_string($value)) {
+            // If it's a single byte string, convert to int
+            if (strlen($value) === 1) {
+                return ord($value);
+            }
+            // If it's a numeric string, convert to int
+            if (is_numeric($value)) {
+                return (int) $value;
+            }
+            // If it's a multi-byte string, try to interpret as big-endian integer
+            if (strlen($value) <= 4) {
+                $int = 0;
+                for ($i = 0; $i < strlen($value); $i++) {
+                    $int = ($int << 8) | ord($value[$i]);
+                }
+                return $int;
+            }
+        }
+        
+        return null;
     }
     
     /**
@@ -411,6 +451,42 @@ class CredentialParser
             $int >>= 8;
         }
         return $bytes;
+    }
+    
+    /**
+     * Sanitize data for debug output (convert binary to hex/base64)
+     */
+    private static function sanitizeForDebug($data): mixed
+    {
+        if (is_string($data)) {
+            // Check if it's binary data (contains non-printable characters)
+            if (preg_match('/[\x00-\x08\x0B-\x0C\x0E-\x1F\x7F-\xFF]/', $data)) {
+                return [
+                    '_type' => 'binary',
+                    '_hex' => bin2hex($data),
+                    '_base64' => base64_encode($data),
+                    '_length' => strlen($data),
+                ];
+            }
+            return $data;
+        }
+        
+        if (is_array($data)) {
+            $result = [];
+            foreach ($data as $key => $value) {
+                $result[$key] = self::sanitizeForDebug($value);
+            }
+            return $result;
+        }
+        
+        if (is_object($data)) {
+            if (method_exists($data, '__toString')) {
+                return self::sanitizeForDebug((string) $data);
+            }
+            return ['_type' => get_class($data)];
+        }
+        
+        return $data;
     }
 
     public static function extractCoseAlgorithm(string $cosePublicKey): ?int
