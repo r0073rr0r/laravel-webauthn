@@ -14,6 +14,19 @@
 
 A **Laravel** package that integrates seamlessly with **Jetstream** and **Livewire** to provide **WebAuthn** authentication — including support for biometric login, USB security keys, and passkeys.
 
+## 📑 Table of Contents
+
+- [Requirements](#-requirements)
+- [Installation](#-installation)
+- [Setup](#️-setup)
+- [Usage](#-usage)
+  - [Registration (WebAuthnRegister)](#registration-webauthnregister)
+  - [Login (WebAuthnLogin)](#login-webauthnlogin)
+- [Customization](#-customization)
+- [Security](#-security)
+- [License](#-license)
+- [Contributing](#-contributing)
+
 ## 📋 Requirements
 
 - **PHP 8.2+**
