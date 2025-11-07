@@ -65,17 +65,6 @@ php artisan vendor:publish --tag=webauthn
 
 This will also copy the translation files to your `lang/vendor/webauthn` directory, where you can customize them.
 
-> **Troubleshooting:** If you see translation keys instead of translated text (e.g., `webauthn::webauthn.add_passkey`):
-> 
-> 1. **Clear all caches:**
->    ```bash
->    php artisan config:clear
->    php artisan cache:clear
->    php artisan view:clear
->    composer dump-autoload
->    ```
-
-
 Migrate database tables:
 
 ```bash
