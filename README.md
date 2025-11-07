@@ -50,7 +50,7 @@ If you encounter dependency errors, run:
 ```bash
 composer require r0073rr0r/laravel-webauthn -W 
 ```
-> **Note:** The package [`spomky-labs/cbor-php`](https://github.com/Spomky-Labs/cbor-php) depends on [`brick/math`](https://github.com/brick/math) `^0.13`.
+> **Note:** `"web-auth/webauthn-framework": "^5.2"` requires [`brick/math`](https://github.com/brick/math) `^0.13`, while newer Jetstream requires `brick/math` `^0.14`. An update to version 5.3 is expected soon, which will resolve this issue, but the tag has not been created yet and the composer constraint cannot be changed.
 
 Publish views and config files:
 
