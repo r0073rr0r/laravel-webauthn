@@ -58,6 +58,7 @@ class WebAuthnKey extends Model
 
     public function user(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\User::class);
+        $userClass = config('webauthn.user', \App\Models\User::class);
+        return $this->belongsTo($userClass);
     }
 }

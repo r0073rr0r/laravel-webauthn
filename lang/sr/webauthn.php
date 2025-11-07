@@ -1,0 +1,30 @@
+<?php
+
+return [
+    'Name' => 'Ime',
+    'Delete' => 'Obriši',
+    'Edit' => 'Izmeni',
+    'Cancel' => 'Otkaži',
+    'Register' => 'Registruj',
+    'Actions' => 'Akcije',
+    'webauthn_add_passkey' => 'Dodajte passkey za prijavu bez lozinke, otpornu na phishing. Koristite biometriju svog uređaja ili fizički sigurnosni ključ za maksimalnu zaštitu naloga.',
+    'webauthn_setup_passkey' => 'Postavite passkey da se prijavite jednim dodirom, otiskom prsta ili skenom lica — brže i sigurnije od lozinki!',
+    'webauthn_name_your_key' => 'Nazovite svoj sigurnosni ključ',
+    'webauthn_key_name_placeholder' => 'npr. Moj YubiKey',
+    'webauthn_register_key' => 'Registruj ključ',
+    'webauthn_register' => 'Registruj se',
+    'webauthn_key_name_required' => 'Naziv ključa je obavezan!',
+    'webauthn_key_registered' => 'Ključ je uspešno registrovan!',
+    'webauthn_key_deleted' => 'Ključ je uspešno obrisan!',
+    'webauthn_key_already_registered' => 'Ključ je već registrovan.',
+    'webauthn_cannot_delete_key' => 'Ne možete obrisati ovaj ključ.',
+    'webauthn_key_not_found' => 'Ključ nije pronađen.',
+    'webauthn_credential_missing' => 'Nedostaje akreditiv!',
+    'webauthn_cannot_extract_data' => 'Ne mogu da izdvojim authData!',
+    'registered_security_keys' => 'Registrovani sigurnosni ključevi',
+    'no_keys_registered' => 'Još nisu registrovani ključevi.',
+    'login_with_passkey' => 'Prijava preko Passkey-a',
+    'sign_in_with_passkey' => 'Prijavite se preko Passkey-a',
+    'delete_key_confirm' => 'Da li ste sigurni da želite da obrišete ovaj ključ?',
+];
+

@@ -50,11 +50,19 @@ Publish all package resources (views, translations, and public assets) with a si
 php artisan vendor:publish --tag=webauthn
 ```
 
+**Note:** Translations are automatically loaded from the package. If you want to customize translations, publish them using:
+```bash
+php artisan vendor:publish --tag=webauthn
+```
+This will copy the translation files to your `lang/vendor/webauthn` directory, where you can customize them.
+
 Migrate database tables:
 
 ```bash
 php artisan migrate
 ```
+
+> **Note:** The migration is safe to run even if the `webauthn_keys` table already exists. It will check if the table exists before creating it, and will add a unique constraint on `credentialId` if it doesn't already exist.
 
 <a href="https://asciinema.org/a/Bn7vl6s5sqh3NfZk5nFI9iPBc?t=7" target="_blank">
   <img src="https://asciinema.org/a/Bn7vl6s5sqh3NfZk5nFI9iPBc.svg" alt="asciicast installation of package">
