@@ -78,17 +78,59 @@ class CredentialParser
         
         // Try getData() method to get key data
         if (method_exists($coseKey, 'getData')) {
-            $keyData = $coseKey->getData();
-            return self::convertKeyDataToPem($keyData, $normalized);
+            try {
+                $keyData = $coseKey->getData();
+                if (is_array($keyData)) {
+                    return self::convertKeyDataToPem($keyData, $normalized);
+                }
+            } catch (\Exception $e) {
+                // Continue to next fallback
+            }
+        }
+        
+        // Try toArray() method if it exists
+        if (method_exists($coseKey, 'toArray')) {
+            try {
+                $keyData = $coseKey->toArray();
+                if (is_array($keyData)) {
+                    return self::convertKeyDataToPem($keyData, $normalized);
+                }
+            } catch (\Exception $e) {
+                // Continue to next fallback
+            }
         }
         
         // Try get() method with different parameters
         if (method_exists($coseKey, 'get')) {
-            // Try to get all data
+            // Try to get all data using different key indices
             try {
-                $keyData = $coseKey->get(-1); // -1 is the key type
-                if (is_array($keyData) && isset($keyData['pem'])) {
-                    return $keyData['pem'];
+                // Try getting x coordinate (key -3 in COSE)
+                $x = $coseKey->get(-3);
+                $y = $coseKey->get(-4);
+                if ($x !== null && $y !== null) {
+                    $keyData = [
+                        -3 => $x,
+                        -4 => $y,
+                        -2 => $coseKey->get(-2) ?? null, // crv
+                        1 => $coseKey->get(1) ?? null,  // kty
+                    ];
+                    return self::convertKeyDataToPem($keyData, $normalized);
+                }
+            } catch (\Exception $e) {
+                // Continue to next fallback
+            }
+            
+            // Try getting RSA parameters
+            try {
+                $n = $coseKey->get(-2); // RSA modulus
+                $e = $coseKey->get(-3); // RSA exponent
+                if ($n !== null && $e !== null) {
+                    $keyData = [
+                        -2 => $n,
+                        -3 => $e,
+                        1 => $coseKey->get(1) ?? null,  // kty
+                    ];
+                    return self::convertKeyDataToPem($keyData, $normalized);
                 }
             } catch (\Exception $e) {
                 // Continue to next fallback
@@ -96,6 +138,7 @@ class CredentialParser
         }
         
         // Last resort: manual conversion from normalized COSE data
+        // The normalized array should contain all the COSE key data
         return self::convertKeyDataToPem($normalized, $normalized);
     }
     
@@ -127,12 +170,33 @@ class CredentialParser
     private static function convertEc2ToPem(array $keyData, array $normalized): string
     {
         // EC2 keys: -1 = kty, -2 = crv, -3 = x, -4 = y
-        $crv = $keyData[-2] ?? $normalized[-2] ?? null;
-        $x = $keyData[-3] ?? $normalized[-3] ?? null;
-        $y = $keyData[-4] ?? $normalized[-4] ?? null;
+        // Try multiple ways to access the data
+        $crv = $keyData[-2] ?? $normalized[-2] ?? $keyData['-2'] ?? $normalized['-2'] ?? null;
+        $x = $keyData[-3] ?? $normalized[-3] ?? $keyData['-3'] ?? $normalized['-3'] ?? null;
+        $y = $keyData[-4] ?? $normalized[-4] ?? $keyData['-4'] ?? $normalized['-4'] ?? null;
+        
+        // Also try with string keys (some implementations use string keys)
+        if ($x === null || $y === null) {
+            // Try accessing as string keys
+            foreach (['-3', '-4', -3, -4] as $key) {
+                if ($x === null && isset($keyData[$key])) {
+                    $x = $keyData[$key];
+                }
+                if ($y === null && isset($normalized[$key])) {
+                    $y = $normalized[$key];
+                }
+            }
+        }
         
         if ($x === null || $y === null) {
-            throw new \RuntimeException('Missing EC2 key coordinates (x, y)');
+            // Debug: log what we have
+            $debugInfo = [
+                'keyData_keys' => array_keys($keyData),
+                'normalized_keys' => array_keys($normalized),
+                'keyData' => $keyData,
+                'normalized' => $normalized,
+            ];
+            throw new \RuntimeException('Missing EC2 key coordinates (x, y). Debug: ' . json_encode($debugInfo));
         }
         
         // Convert coordinates to binary string
