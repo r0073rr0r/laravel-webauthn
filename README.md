@@ -35,7 +35,6 @@ A **Laravel** package that integrates seamlessly with **Jetstream** and **Livewi
 - **Jestream 5.x**
 - **OpenSSL** extension for PHP
 - **_Composer packages_**:
-    - **spomky-labs/base64url ^2.0**
     - **spomky-labs/cbor-php ^3.1**
     - **web-auth/webauthn-framework ^5.2**
 
