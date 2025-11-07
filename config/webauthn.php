@@ -37,6 +37,9 @@ return [
     // Audit logging
     'audit_log' => [
         'enabled' => env('WEBAUTHN_AUDIT_LOG_ENABLED', true),
+        // Log channel: 'daily', 'single', 'syslog', 'errorlog', or custom channel from config/logging.php
+        // For email notifications, create a custom 'mail' channel in config/logging.php
+        // Example: 'webauthn-email' => ['driver' => 'mail', 'to' => 'admin@example.com']
         'channel' => env('WEBAUTHN_AUDIT_LOG_CHANNEL', 'daily'),
     ],
 ];

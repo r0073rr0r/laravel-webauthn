@@ -6,12 +6,24 @@ use Illuminate\Support\Facades\Log;
 
 class AuditLogger
 {
+    /**
+     * Log WebAuthn action to the configured log channel
+     * 
+     * @param string $action Action name (e.g., 'key_registered', 'login_success')
+     * @param array $context Additional context data
+     * 
+     * Note: 'daily' channel creates a new log file each day (e.g., laravel-2025-01-07.log)
+     * Other Laravel channels: 'single', 'syslog', 'errorlog', or custom channels
+     * This does NOT send emails - it only writes to log files in storage/logs/
+     */
     public static function log(string $action, array $context = []): void
     {
         if (! config('webauthn.audit_log.enabled', true)) {
             return;
         }
 
+        // 'daily' = Laravel log channel that rotates files daily (does NOT send emails)
+        // Other options: 'single', 'syslog', 'errorlog', or custom channels from config/logging.php
         $channel = config('webauthn.audit_log.channel', 'daily');
 
         Log::channel($channel)->info("WebAuthn: {$action}", array_merge([
