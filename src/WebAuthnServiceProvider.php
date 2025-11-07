@@ -18,7 +18,9 @@ class WebAuthnServiceProvider extends ServiceProvider
         Livewire::component('webauthn-register', WebAuthnRegister::class);
         Livewire::component('webauthn-login', WebAuthnLogin::class);
 
-        $langPath = function_exists('lang_path') ? lang_path('vendor/webauthn') : base_path('lang/vendor/webauthn');
+        // Use Laravel's langPath() method to get the correct path
+        // In Laravel 9+ it returns lang/, in older versions it returns resources/lang
+        $langPath = app()->langPath('vendor/webauthn');
 
         $this->publishes([
             __DIR__.'/../public' => public_path('vendor/webauthn'),
