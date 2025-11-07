@@ -13,10 +13,10 @@ class WebAuthnServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(__DIR__.'/../config/webauthn.php', 'webauthn');
         $this->loadViewsFrom(__DIR__.'/../resources/views', 'webauthn');
-        
+
         // Load translations - try lang/ first (Laravel 9+), fallback to resources/lang
-        $langPath = is_dir(__DIR__.'/../lang') 
-            ? __DIR__.'/../lang' 
+        $langPath = is_dir(__DIR__.'/../lang')
+            ? __DIR__.'/../lang'
             : __DIR__.'/../resources/lang';
         $this->loadTranslationsFrom($langPath, 'webauthn');
 
@@ -36,8 +36,5 @@ class WebAuthnServiceProvider extends ServiceProvider
         ], 'webauthn');
     }
 
-    public function register(): void
-    {
-
-    }
+    public function register(): void {}
 }

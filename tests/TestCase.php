@@ -2,7 +2,6 @@
 
 namespace r0073rr0r\WebAuthn\Tests;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\LivewireServiceProvider;
 use Orchestra\Testbench\TestCase as BaseTestCase;
@@ -33,5 +32,3 @@ abstract class TestCase extends BaseTestCase
         $app['config']->set('view.paths', $paths);
     }
 }
-
-

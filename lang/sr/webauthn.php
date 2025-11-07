@@ -26,5 +26,31 @@ return [
     'login_with_passkey' => 'Prijava preko Passkey-a',
     'sign_in_with_passkey' => 'Prijavite se preko Passkey-a',
     'delete_key_confirm' => 'Da li ste sigurni da želite da obrišete ovaj ključ?',
-];
 
+    // Error messages
+    'error_credential_not_found' => 'Vaš sigurnosni ključ nije prepoznat. Molimo pokušajte ponovo ili koristite drugi ključ.',
+    'error_invalid_signature' => 'Potpis nije validan. Molimo pokušajte ponovo.',
+    'error_challenge_mismatch' => 'Sesija je istekla. Molimo osvežite stranicu i pokušajte ponovo.',
+    'error_replay_attack' => 'Sigurnosna greška: detektovan pokušaj ponovnog korišćenja podataka. Molimo pokušajte ponovo.',
+    'error_origin_not_allowed' => 'Zahtev dolazi sa nedozvoljene adrese. Molimo kontaktirajte administratora.',
+    'error_invalid_client_data' => 'Nevalidni podaci. Molimo pokušajte ponovo.',
+    'error_invalid_type' => 'Nevalidan tip zahteva.',
+    'error_rp_id_mismatch' => 'Greška u verifikaciji domena.',
+    'error_user_not_present' => 'Korisnik nije prisutan. Molimo pokušajte ponovo.',
+    'error_user_not_verified' => 'Korisnik nije verifikovan. Molimo koristite verifikaciju.',
+    'error_invalid_public_key' => 'Nevalidan format javnog ključa.',
+    'error_algorithm_not_allowed' => 'Algoritam nije dozvoljen.',
+    'error_key_already_registered' => 'Ovaj ključ je već registrovan.',
+    'error_invalid_credential_data' => 'Nevalidni podaci akreditiva.',
+    'error_key_name_required' => 'Naziv ključa je obavezan.',
+    'error_key_name_too_short' => 'Naziv ključa mora imati najmanje :min karaktera.',
+    'error_key_name_too_long' => 'Naziv ključa može imati najviše :max karaktera.',
+    'error_rate_limit_exceeded' => 'Previše pokušaja. Molimo sačekajte :seconds sekundi.',
+    'error_login_failed' => 'Prijava nije uspela. Molimo pokušajte ponovo.',
+    'error_registration_failed' => 'Registracija nije uspela. Molimo pokušajte ponovo.',
+
+    // Success messages
+    'success_key_registered' => 'Ključ je uspešno registrovan!',
+    'success_key_deleted' => 'Ključ je uspešno obrisan!',
+    'success_login' => 'Uspešno prijavljivanje!',
+];
