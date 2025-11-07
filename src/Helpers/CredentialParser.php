@@ -170,26 +170,93 @@ class CredentialParser
     private static function convertEc2ToPem(array $keyData, array $normalized): string
     {
         // EC2 keys: -1 = kty, -2 = crv, -3 = x, -4 = y
-        // Try multiple ways to access the data
-        $crv = $keyData[-2] ?? $normalized[-2] ?? $keyData['-2'] ?? $normalized['-2'] ?? null;
-        $x = $keyData[-3] ?? $normalized[-3] ?? $keyData['-3'] ?? $normalized['-3'] ?? null;
-        $y = $keyData[-4] ?? $normalized[-4] ?? $keyData['-4'] ?? $normalized['-4'] ?? null;
+        // Use normalized array directly as it contains the raw COSE data
+        // Try to get crv first (should be a small integer: 1, 2, or 3)
+        $crv = null;
+        $x = null;
+        $y = null;
         
-        // Also try with string keys (some implementations use string keys)
-        if ($x === null || $y === null) {
-            // Try accessing as string keys
-            foreach (['-3', '-4', -3, -4] as $key) {
-                if ($x === null && isset($keyData[$key])) {
-                    $x = $keyData[$key];
+        // First, try to find crv - it should be a small integer value
+        foreach ([-2, '-2'] as $key) {
+            if (isset($normalized[$key])) {
+                $val = $normalized[$key];
+                // crv should be a small integer (1, 2, or 3) or a single byte
+                if (is_int($val) && $val >= 1 && $val <= 3) {
+                    $crv = $val;
+                    break;
+                } elseif (is_string($val) && strlen($val) === 1) {
+                    $intVal = ord($val);
+                    if ($intVal >= 1 && $intVal <= 3) {
+                        $crv = $intVal;
+                        break;
+                    }
                 }
-                if ($y === null && isset($normalized[$key])) {
-                    $y = $normalized[$key];
+            }
+        }
+        
+        // If crv not found, try from keyData
+        if ($crv === null) {
+            foreach ([-2, '-2'] as $key) {
+                if (isset($keyData[$key])) {
+                    $val = $keyData[$key];
+                    if (is_int($val) && $val >= 1 && $val <= 3) {
+                        $crv = $val;
+                        break;
+                    } elseif (is_string($val) && strlen($val) === 1) {
+                        $intVal = ord($val);
+                        if ($intVal >= 1 && $intVal <= 3) {
+                            $crv = $intVal;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Get x and y coordinates - these should be longer binary strings
+        foreach ([-3, '-3'] as $key) {
+            if (isset($normalized[$key])) {
+                $val = $normalized[$key];
+                // x should be a binary string (typically 32 bytes for P-256)
+                if (is_string($val) && strlen($val) > 1) {
+                    $x = $val;
+                    break;
+                }
+            }
+        }
+        
+        foreach ([-4, '-4'] as $key) {
+            if (isset($normalized[$key])) {
+                $val = $normalized[$key];
+                // y should be a binary string (typically 32 bytes for P-256)
+                if (is_string($val) && strlen($val) > 1) {
+                    $y = $val;
+                    break;
+                }
+            }
+        }
+        
+        // If not found in normalized, try keyData
+        if ($x === null) {
+            foreach ([-3, '-3'] as $key) {
+                if (isset($keyData[$key]) && is_string($keyData[$key]) && strlen($keyData[$key]) > 1) {
+                    $x = $keyData[$key];
+                    break;
+                }
+            }
+        }
+        
+        if ($y === null) {
+            foreach ([-4, '-4'] as $key) {
+                if (isset($keyData[$key]) && is_string($keyData[$key]) && strlen($keyData[$key]) > 1) {
+                    $y = $keyData[$key];
+                    break;
                 }
             }
         }
         
         if ($x === null || $y === null) {
-            // Debug: log what we have (convert binary data to hex/base64 for safe JSON encoding)
+            // Debug: log what we have
             $safeKeyData = self::sanitizeForDebug($keyData);
             $safeNormalized = self::sanitizeForDebug($normalized);
             $debugInfo = [
@@ -205,12 +272,19 @@ class CredentialParser
         $xBin = self::normalizeKeyValue($x);
         $yBin = self::normalizeKeyValue($y);
         
-        // Normalize crv to integer (it might be a string or binary data)
-        $crvInt = self::normalizeCoseInteger($crv);
-        
-        if ($crvInt === null) {
-            throw new \RuntimeException('Missing or invalid EC curve (crv) parameter. Value: ' . (is_string($crv) ? bin2hex($crv) : var_export($crv, true)));
+        // If crv is still null, try to determine from key size
+        if ($crv === null) {
+            // P-256: 32 bytes, P-384: 48 bytes, P-521: 66 bytes
+            $keySize = strlen($xBin);
+            $crv = match ($keySize) {
+                32 => 1,  // P-256
+                48 => 2,  // P-384
+                66 => 3,  // P-521
+                default => throw new \RuntimeException("Unable to determine EC curve from key size: {$keySize} bytes. x: " . bin2hex($xBin) . ", y: " . bin2hex($yBin)),
+            };
         }
+        
+        $crvInt = $crv;
         
         // Determine curve name based on crv
         $curveName = match ($crvInt) {
