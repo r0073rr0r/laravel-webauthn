@@ -201,11 +201,34 @@ Enable audit logging for security monitoring:
 ],
 ```
 
+**Log Channel Options:**
+- `'daily'` - Creates a new log file each day (e.g., `laravel-2025-01-07.log`) in `storage/logs/`
+- `'single'` - Writes to a single log file (`laravel.log`)
+- `'syslog'` - Writes to system log
+- `'errorlog'` - Writes to PHP error log
+- Custom channel - Use any channel defined in `config/logging.php`
+
+> **Note:** The `'daily'` channel does NOT send emails. It only writes to log files. If you need email notifications, configure a custom log channel in `config/logging.php` that uses a mail driver.
+
 Audit logs include:
 - Key registrations (with user ID, key name, credential ID, AAGUID)
 - Login attempts (successful and failed)
 - Key deletions
 - Errors with full context (IP, user agent, timestamp)
+
+**Example log entry:**
+```json
+{
+  "message": "WebAuthn: login_success",
+  "action": "login_success",
+  "user_id": 123,
+  "credential_id": "a1b2c3d4...",
+  "success": true,
+  "ip": "192.168.1.1",
+  "user_agent": "Mozilla/5.0...",
+  "timestamp": "2025-01-07T12:34:56+00:00"
+}
+```
 
 ### Environment Variables
 
