@@ -4,7 +4,6 @@ namespace r0073rr0r\WebAuthn\Livewire;
 
 use CBOR\Decoder;
 use CBOR\StringStream;
-use Cose\Key\Key;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
 use Livewire\Component;
@@ -152,11 +151,7 @@ class WebAuthnRegister extends Component
         $cosePublicKey = substr($credentialData, 18 + $credIdLen);
 
         // COSE -> PEM
-        $stream = new StringStream($cosePublicKey);
-        $decoderCose = new Decoder;
-        $cborCose = $decoderCose->decode($stream);
-        $coseKey = Key::createFromData($cborCose->normalize());
-        $publicKeyPem = $coseKey->asPEM();
+        $publicKeyPem = CredentialParser::convertCoseToPem($cosePublicKey);
 
         // Enforce allowed algorithms
         $alg = CredentialParser::extractCoseAlgorithm($cosePublicKey);

@@ -64,7 +64,26 @@ class CredentialParser
         $decoderCose = new Decoder;
         $cborCose = $decoderCose->decode($stream);
         $coseKey = Key::createFromData($cborCose->normalize());
-        return $coseKey->asPEM();
+        
+        // Check if asPEM() method exists (for compatibility with different versions)
+        if (method_exists($coseKey, 'asPEM')) {
+            return $coseKey->asPEM();
+        }
+        
+        // Fallback: try toPEM() if asPEM() doesn't exist
+        if (method_exists($coseKey, 'toPEM')) {
+            return $coseKey->toPEM();
+        }
+        
+        // If neither method exists, try to get PEM using get() method
+        if (method_exists($coseKey, 'get')) {
+            $data = $coseKey->get(-1); // -1 is the key type
+            if (isset($data['pem'])) {
+                return $data['pem'];
+            }
+        }
+        
+        throw new \RuntimeException('Unable to convert COSE key to PEM format. The Key object does not have asPEM(), toPEM(), or get() methods available.');
     }
 
     public static function extractCoseAlgorithm(string $cosePublicKey): ?int
