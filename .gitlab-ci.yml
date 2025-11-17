@@ -1,4 +1,5 @@
 stages:
+  - sync
   - build
   - test
 
@@ -16,6 +17,17 @@ cache:
   paths:
     - vendor/
     - .composer/cache/
+
+sync_with_github:
+  stage: sync
+  script:
+    - git clone https://github.com/USERNAME/REPO.git github_repo
+    - cd github_repo
+    - git remote add gitlab https://gitlab.com/YOUR/GROUP/PROJECT.git
+    - git push gitlab --all
+    - git push gitlab --tags
+  only:
+    - schedules
 
 build:
   stage: build
