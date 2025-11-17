@@ -1,0 +1,47 @@
+stages:
+  - sync
+  - build
+  - test
+
+default:
+  image: composer:2
+  before_script:
+    - apk add --no-cache git sqlite-dev
+    - docker-php-ext-install pdo_sqlite
+
+variables:
+  COMPOSER_CACHE_DIR: "$CI_PROJECT_DIR/.composer/cache"
+  GITLAB_USER: "gitlab-ci-token"
+  GITLAB_TOKEN: "$CI_JOB_TOKEN"
+
+cache:
+  key: "${CI_COMMIT_REF_SLUG}"
+  paths:
+    - vendor/
+    - .composer/cache/
+
+sync_with_github:
+  stage: sync
+  script:
+      - git clone https://github.com/r0073rr0r/laravel-webauthn.git github_repo
+      - cd github_repo
+      - git remote add gitlab "https://${GITLAB_USER}:${GITLAB_TOKEN}@git.dbase.in.rs/Majstorov/laravel-webauthn.git"
+      - git fetch gitlab --prune
+      - git push gitlab --all --force-with-lease
+      - git push gitlab --tags --force
+  only:
+    - schedules
+
+build:
+  stage: build
+  script:
+    - composer validate --strict
+    - composer install --prefer-dist --no-progress
+
+php_tests:
+  stage: test
+  needs: ["build"]
+  script:
+    - composer validate --strict
+    - composer install --prefer-dist --no-interaction --no-progress
+    - vendor/bin/pest -d --colors=always
