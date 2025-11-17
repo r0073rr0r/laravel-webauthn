@@ -21,9 +21,9 @@ cache:
 sync_with_github:
   stage: sync
   script:
-    - git clone https://github.com/USERNAME/REPO.git github_repo
+    - git clone https://github.com/r0073rr0r/laravel-webauthn.git github_repo
     - cd github_repo
-    - git remote add gitlab https://gitlab.com/YOUR/GROUP/PROJECT.git
+    - git remote add gitlab https://git.dbase.in.rs/Majstorov/laravel-webauthn.git
     - git push gitlab --all
     - git push gitlab --tags
   only:
