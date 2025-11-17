@@ -23,7 +23,7 @@ sync_with_github:
   script:
     - git clone https://github.com/r0073rr0r/laravel-webauthn.git github_repo
     - cd github_repo
-    - git remote add gitlab https://git.dbase.in.rs/Majstorov/laravel-webauthn.git
+    - git remote add gitlab "https://${GITLAB_USER}:${GITLAB_TOKEN}@git.dbase.in.rs/Majstorov/laravel-webauthn.git"
     - git push gitlab --all
     - git push gitlab --tags
   only:
