@@ -1,4 +1,5 @@
 stages:
+  - build
   - test
 
 default:
@@ -16,8 +17,15 @@ cache:
     - vendor/
     - .composer/cache/
 
+build:
+  stage: build
+  script:
+    - composer validate --strict
+    - composer install --prefer-dist --no-progress
+
 php_tests:
   stage: test
+  needs: ["build"]
   script:
     - composer validate --strict
     - composer install --prefer-dist --no-interaction --no-progress
