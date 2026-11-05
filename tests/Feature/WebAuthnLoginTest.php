@@ -4,6 +4,7 @@ namespace r0073rr0r\WebAuthn\Tests\Feature;
 
 use Illuminate\Support\Facades\Auth;
 use Livewire\Livewire;
+use r0073rr0r\WebAuthn\Helpers\CredentialParser;
 use r0073rr0r\WebAuthn\Livewire\WebAuthnLogin;
 use r0073rr0r\WebAuthn\Models\WebAuthnKey;
 use r0073rr0r\WebAuthn\Tests\Support\OpenSslMock;
@@ -17,10 +18,18 @@ beforeEach(function () {
 
 it('mounts and sets challenge when session is empty', function () {
     Livewire::test(WebAuthnLogin::class)
-        ->assertSet('challenge', fn ($v) => is_string($v) && $v !== '')
-        ->assertSet('keys', fn ($v) => $v instanceof \Illuminate\Database\Eloquent\Collection && $v->count() === 0);
+        ->assertSet('challenge', fn ($v) => is_string($v) && $v !== '');
 
     expect(session()->has('webauthn_login_challenge'))->toBeTrue();
+});
+
+it('does not expose any credential ids on the login page', function () {
+    $user = \App\Models\User::create(['name' => 'U', 'email' => 'leak@example.com']);
+    $rawId = random_bytes(16);
+    webauthnLoginKey($user, $rawId);
+
+    Livewire::test(WebAuthnLogin::class)
+        ->assertDontSee(CredentialParser::base64url_encode($rawId), false);
 });
 
 it('does not authenticate when credential is not found', function () {
@@ -105,7 +114,7 @@ it('authenticates successfully on valid credential and signature', function () {
     OpenSslMock::setReturn(0);
 });
 
-it('invalidates challenge after attempt', function () {
+it('rotates the challenge after an attempt', function () {
     config()->set('webauthn.allowed_origins', [config('app.url')]);
     $user = \App\Models\User::create(['name' => 'U2', 'email' => 'ok2@example.com']);
     $rawId = random_bytes(16);
@@ -147,7 +156,10 @@ it('invalidates challenge after attempt', function () {
 
     $component->call('loginWithPasskey', json_encode($cred));
 
-    expect(session()->has('webauthn_login_challenge'))->toBeFalse();
+    $next = session('webauthn_login_challenge');
+    expect($next)->toBeString()
+        ->and(CredentialParser::base64url_encode($next))->not->toBe($challenge)
+        ->and($component->get('challenge'))->toBe(CredentialParser::base64url_encode($next));
     OpenSslMock::setReturn(0);
 });
 
@@ -268,4 +280,115 @@ it('does not authenticate on invalid signature', function () {
 
     $component->call('loginWithPasskey', json_encode($cred));
     expect(Auth::check())->toBeFalse();
+});
+
+function webauthnLoginKey($user, string $rawId, int $counter = 0): WebAuthnKey
+{
+    return WebAuthnKey::create([
+        'user_id' => $user->id,
+        'name' => 'Key',
+        'credentialId' => $rawId,
+        'type' => 'public-key',
+        'transports' => json_encode([]),
+        'attestationType' => 'att',
+        'trustPath' => 'trust',
+        'aaguid' => null,
+        'credentialPublicKey' => '-----BEGIN PUBLIC KEY-----\nMIIB...\n-----END PUBLIC KEY-----',
+        'counter' => $counter,
+    ]);
+}
+
+function webauthnAssertion(string $rawId, string $challenge, int $signCount = 1, ?string $userHandle = null): string
+{
+    $clientData = json_encode([
+        'challenge' => $challenge,
+        'type' => 'webauthn.get',
+        'origin' => config('app.url'),
+    ]);
+    $authenticatorData = hash('sha256', config('webauthn.rp_id'), true).chr(0x01 | 0x04).pack('N', $signCount);
+
+    $response = [
+        'clientDataJSON' => CredentialParser::base64url_encode($clientData),
+        'authenticatorData' => CredentialParser::base64url_encode($authenticatorData),
+        'signature' => CredentialParser::base64url_encode('sig'),
+    ];
+    if ($userHandle !== null) {
+        $response['userHandle'] = CredentialParser::base64url_encode($userHandle);
+    }
+
+    return json_encode([
+        'id' => CredentialParser::base64url_encode($rawId),
+        'type' => 'public-key',
+        'response' => $response,
+    ]);
+}
+
+it('does not allow the challenge property to be tampered with', function () {
+    Livewire::test(WebAuthnLogin::class)->set('challenge', 'attacker-chosen');
+})->throws(\Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException::class);
+
+it('rejects a replayed assertion even when it was valid the first time', function () {
+    config()->set('webauthn.allowed_origins', [config('app.url')]);
+    $user = \App\Models\User::create(['name' => 'R', 'email' => 'replay@example.com']);
+    $rawId = random_bytes(16);
+    webauthnLoginKey($user, $rawId);
+
+    $component = Livewire::test(WebAuthnLogin::class);
+    $assertion = webauthnAssertion($rawId, $component->get('challenge'), 5);
+
+    OpenSslMock::setReturn(1);
+    $component->call('loginWithPasskey', $assertion);
+    expect(Auth::check())->toBeTrue();
+
+    Auth::logout();
+    $component->call('loginWithPasskey', $assertion);
+    expect(Auth::check())->toBeFalse();
+    OpenSslMock::setReturn(0);
+});
+
+it('rejects a signature counter that did not increase', function () {
+    config()->set('webauthn.allowed_origins', [config('app.url')]);
+    $user = \App\Models\User::create(['name' => 'C', 'email' => 'counter@example.com']);
+    $rawId = random_bytes(16);
+    webauthnLoginKey($user, $rawId, 7);
+
+    $component = Livewire::test(WebAuthnLogin::class);
+
+    OpenSslMock::setReturn(1);
+    $component->call('loginWithPasskey', webauthnAssertion($rawId, $component->get('challenge'), 7));
+    expect(Auth::check())->toBeFalse()
+        ->and($component->get('error'))->not->toBe('');
+    OpenSslMock::setReturn(0);
+});
+
+it('accepts authenticators that always report a zero counter', function () {
+    config()->set('webauthn.allowed_origins', [config('app.url')]);
+    $user = \App\Models\User::create(['name' => 'Z', 'email' => 'zero@example.com']);
+    $rawId = random_bytes(16);
+    webauthnLoginKey($user, $rawId, 0);
+
+    $component = Livewire::test(WebAuthnLogin::class);
+
+    OpenSslMock::setReturn(1);
+    $component->call('loginWithPasskey', webauthnAssertion($rawId, $component->get('challenge'), 0));
+    expect(Auth::id())->toBe($user->id);
+    OpenSslMock::setReturn(0);
+});
+
+it('rejects a user handle that belongs to a different user', function () {
+    config()->set('webauthn.allowed_origins', [config('app.url')]);
+    $owner = \App\Models\User::create(['name' => 'O', 'email' => 'owner@example.com']);
+    $other = \App\Models\User::create(['name' => 'X', 'email' => 'other@example.com']);
+    $rawId = random_bytes(16);
+    webauthnLoginKey($owner, $rawId);
+
+    $component = Livewire::test(WebAuthnLogin::class);
+
+    OpenSslMock::setReturn(1);
+    $component->call('loginWithPasskey', webauthnAssertion($rawId, $component->get('challenge'), 1, (string) $other->id));
+    expect(Auth::check())->toBeFalse();
+
+    $component->call('loginWithPasskey', webauthnAssertion($rawId, $component->get('challenge'), 2, (string) $owner->id));
+    expect(Auth::id())->toBe($owner->id);
+    OpenSslMock::setReturn(0);
 });

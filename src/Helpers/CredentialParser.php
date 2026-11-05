@@ -69,6 +69,28 @@ class CredentialParser
         return rtrim(strtr(base64_encode($data), '+/', '-_'), '=');
     }
 
+    /**
+     * OpenSSL digest for verifying an assertion signed with this public key:
+     * ES384 (P-384) uses SHA-384, ES512 (P-521) uses SHA-512, ES256 and RS256 use SHA-256.
+     */
+    public static function signatureAlgorithm(mixed $publicKey): int
+    {
+        if (! $publicKey instanceof \OpenSSLAsymmetricKey) {
+            return OPENSSL_ALGO_SHA256;
+        }
+
+        $details = openssl_pkey_get_details($publicKey);
+        if (($details['type'] ?? null) !== OPENSSL_KEYTYPE_EC) {
+            return OPENSSL_ALGO_SHA256;
+        }
+
+        return match ($details['ec']['curve_name'] ?? null) {
+            'secp384r1' => OPENSSL_ALGO_SHA384,
+            'secp521r1' => OPENSSL_ALGO_SHA512,
+            default => OPENSSL_ALGO_SHA256,
+        };
+    }
+
     public static function convertCoseToPem(string $cosePublicKey): string
     {
         $stream = new StringStream($cosePublicKey);

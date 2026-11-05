@@ -24,6 +24,8 @@ return [
     'registered_security_keys' => 'Registered Security Keys',
     'no_keys_registered' => 'No keys registered yet.',
     'login_with_passkey' => 'Login with Passkey',
+    'passkey_signing_in' => 'Signing in…',
+    'error_passkey_cancelled' => 'Passkey sign-in was cancelled or timed out.',
     'sign_in_with_passkey' => 'Sign in with Passkey',
     'delete_key_confirm' => 'Are you sure you want to delete this key?',
 

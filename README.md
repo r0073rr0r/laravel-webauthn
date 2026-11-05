@@ -130,6 +130,10 @@ Add the component to your Blade view (_I added it in `resources/views/auth/login
 
 This component allows users to log in using their previously registered WebAuthn device.
 
+The login uses **discoverable credentials** (passkeys): the browser offers the passkeys it holds for your site, so the login page never lists credential IDs. The button is shown only when the browser supports WebAuthn. Keys registered from version 1.3.0 on are created as discoverable (`residentKey: preferred`).
+
+> **Upgrading to 1.3.0:** the `$keys` property was removed from `WebAuthnLogin`. If you published `web-authn-login.blade.php`, re-publish it or update it to read the challenge from `$wire.challenge` and send an empty `allowCredentials`. Older security keys registered as non-discoverable (some USB keys) can't be offered by the browser without their ID; users can remove and re-add them.
+
 ## ⚙️ Configuration
 
 The package configuration file is located at `config/webauthn.php`. After publishing, you can customize the following options:
@@ -317,7 +321,10 @@ WebAuthn is a modern standard for secure passwordless authentication. This packa
 - **Audit Logging**: Comprehensive logging of all WebAuthn operations for security monitoring
 - **Replay Attack Protection**: Sign counter validation prevents replay attacks
 - **Origin Validation**: Ensures requests come from allowed origins only
-- **Challenge Validation**: One-time challenges prevent replay attacks
+- **Challenge Validation**: One-time, session-bound challenges, rotated after every attempt
+- **Locked Livewire State**: User ID, challenge and key list can't be changed from the browser
+- **No Credential Enumeration**: The login page does not expose any credential IDs
+- **Session Regeneration**: The session ID is regenerated after a passkey login
 - **User Verification**: Optional user verification requirement for enhanced security
 
 ### Supported Authenticators

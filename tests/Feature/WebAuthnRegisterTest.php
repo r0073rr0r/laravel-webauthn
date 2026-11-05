@@ -279,3 +279,40 @@ it('supports multiple key types for different authenticators', function () {
     expect($ec2Pem)->toContain('BEGIN PUBLIC KEY');
     expect($rsaPem)->toContain('BEGIN PUBLIC KEY');
 });
+
+it('does not allow userId to be tampered with', function () {
+    $user = \App\Models\User::create(['name' => 'A', 'email' => 'attacker@example.com']);
+    $this->actingAs($user);
+
+    Livewire::test(WebAuthnRegister::class)->set('userId', 999);
+})->throws(\Livewire\Features\SupportLockedProperties\CannotUpdateLockedPropertyException::class);
+
+it('cannot delete a key of another user', function () {
+    $victim = \App\Models\User::create(['name' => 'V', 'email' => 'victim@example.com']);
+    $attacker = \App\Models\User::create(['name' => 'A', 'email' => 'attacker2@example.com']);
+    $key = WebAuthnKey::create([
+        'user_id' => $victim->id,
+        'name' => 'Victim key',
+        'credentialId' => random_bytes(16),
+        'type' => 'public-key',
+        'transports' => json_encode([]),
+        'attestationType' => 'att',
+        'trustPath' => 'trust',
+        'aaguid' => null,
+        'credentialPublicKey' => 'pem',
+        'counter' => 0,
+    ]);
+
+    $this->actingAs($attacker);
+    Livewire::test(WebAuthnRegister::class)->call('deleteKey', $key->id);
+
+    expect(WebAuthnKey::find($key->id))->not->toBeNull();
+});
+
+it('asks for a discoverable credential at registration', function () {
+    $user = \App\Models\User::create(['name' => 'D', 'email' => 'disc@example.com']);
+    $this->actingAs($user);
+
+    Livewire::test(WebAuthnRegister::class)
+        ->assertSet('creationOptions', fn ($o) => ($o['authenticatorSelection']['residentKey'] ?? null) === 'preferred');
+});
