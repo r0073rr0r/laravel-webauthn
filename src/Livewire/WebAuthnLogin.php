@@ -3,6 +3,7 @@
 namespace r0073rr0r\WebAuthn\Livewire;
 
 use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use r0073rr0r\WebAuthn\Exceptions\ChallengeMismatchException;
 use r0073rr0r\WebAuthn\Exceptions\InvalidCredentialException;
@@ -17,34 +18,52 @@ use r0073rr0r\WebAuthn\Models\WebAuthnKey;
 
 class WebAuthnLogin extends Component
 {
-    public $keys;
+    /**
+     * Base64url challenge for the next sign-in attempt. Read by the browser only;
+     * the server always verifies against the copy stored in the session.
+     */
+    #[Locked]
+    public string $challenge = '';
 
-    public $challenge;
+    /**
+     * Message of the last failed attempt, shown under the button.
+     */
+    #[Locked]
+    public string $error = '';
 
     protected $listeners = ['loginWithPasskey'];
 
     public function mount(): void
     {
-        $this->keys = WebAuthnKey::all();
-
-        if (! session()->has('webauthn_login_challenge')) {
-            session(['webauthn_login_challenge' => random_bytes(32)]);
-        }
-
-        $this->challenge = rtrim(strtr(base64_encode(session('webauthn_login_challenge')), '+/', '-_'), '=');
+        $this->challenge = $this->issueChallenge();
     }
 
     public function loginWithPasskey($credential)
     {
-        $data = json_decode($credential, true);
-        $credentialId = CredentialParser::base64url_decode($data['id'] ?? '');
+        // The session challenge is single-use: take it out now and hand the browser a new one,
+        // so a failed or replayed assertion can never be checked against the same challenge twice.
+        $expectedChallenge = session()->pull('webauthn_login_challenge');
+        $this->challenge = $this->issueChallenge();
+        $this->error = '';
 
-        $key = WebAuthnKey::where('credentialId', $credentialId)->first();
+        $data = json_decode((string) $credential, true);
+        $credentialId = CredentialParser::base64url_decode(is_array($data) ? (string) ($data['id'] ?? '') : '');
+
+        try {
+            // Per-IP limit before any lookup, so unknown credential IDs can't be probed endlessly
+            WebAuthnRateLimiter::check('login');
+        } catch (WebAuthnException $e) {
+            $this->error = $e->getUserMessage();
+
+            return;
+        }
+
+        $key = $credentialId === '' ? null : WebAuthnKey::where('credentialId', $credentialId)->first();
 
         if (! $key) {
             $exception = new InvalidCredentialException;
             AuditLogger::logLogin(0, $credentialId, false);
-            session()->flash('status', $exception->getUserMessage());
+            $this->error = $exception->getUserMessage();
 
             return;
         }
@@ -66,13 +85,12 @@ class WebAuthnLogin extends Component
                 throw new WebAuthnException('Invalid client data', 'error_invalid_client_data');
             }
 
-            $expectedChallenge = $this->challenge;
-
-            // One-time challenge: must match then invalidate
-            if (! isset($clientData['challenge']) || $clientData['challenge'] !== $expectedChallenge) {
+            // Challenge must match the one issued to this session
+            if (! is_string($expectedChallenge) || $expectedChallenge === ''
+                || ! is_string($clientData['challenge'] ?? null)
+                || ! hash_equals(CredentialParser::base64url_encode($expectedChallenge), $clientData['challenge'])) {
                 throw new ChallengeMismatchException;
             }
-            session()->forget('webauthn_login_challenge');
 
             // Verify type and origin
             if (($clientData['type'] ?? '') !== 'webauthn.get') {
@@ -83,6 +101,12 @@ class WebAuthnLogin extends Component
             $allowedOrigins = array_filter((array) config('webauthn.allowed_origins', []));
             if (! in_array($origin, $allowedOrigins, true)) {
                 throw new OriginNotAllowedException;
+            }
+
+            // A discoverable credential reports the user handle set at registration; it must belong to the key owner
+            $userHandle = CredentialParser::base64url_decode((string) ($data['response']['userHandle'] ?? ''));
+            if ($userHandle !== '' && ! hash_equals((string) $key->user_id, $userHandle)) {
+                throw new InvalidCredentialException;
             }
 
             // rpIdHash must match configured rp_id
@@ -112,15 +136,16 @@ class WebAuthnLogin extends Component
                 throw new WebAuthnException('Invalid public key format: '.implode('; ', $errors), 'error_invalid_public_key');
             }
 
-            $ok = openssl_verify($signedData, $signature, $publicKeyResource, OPENSSL_ALGO_SHA256);
+            $ok = openssl_verify($signedData, $signature, $publicKeyResource, CredentialParser::signatureAlgorithm($publicKeyResource));
             openssl_free_key($publicKeyResource);
 
             if ($ok !== 1) {
                 throw new InvalidSignatureException;
             }
 
-            $signCount = unpack('N', substr($authenticatorData, 33, 4))[1];
-            if ($signCount < $key->counter) {
+            // Signature counter must grow, unless the authenticator doesn't keep one (both zero)
+            $signCount = CredentialParser::extractCounter($authenticatorData);
+            if (($signCount !== 0 || (int) $key->counter !== 0) && $signCount <= (int) $key->counter) {
                 throw new ReplayAttackException;
             }
 
@@ -128,9 +153,11 @@ class WebAuthnLogin extends Component
             $key->save();
 
             Auth::login($key->user);
+            session()->regenerate();
 
             // Clear rate limit on success
             WebAuthnRateLimiter::clear('login', $key->user_id);
+            WebAuthnRateLimiter::clear('login');
 
             // Audit log success
             AuditLogger::logLogin($key->user_id, $credentialId, true);
@@ -144,7 +171,7 @@ class WebAuthnLogin extends Component
                 'user_id' => $key->user_id ?? null,
                 'credential_id' => bin2hex($credentialId),
             ]);
-            session()->flash('status', $e->getUserMessage());
+            $this->error = $e->getUserMessage();
 
             return;
         } catch (\Throwable $e) {
@@ -152,7 +179,7 @@ class WebAuthnLogin extends Component
                 'user_id' => $key->user_id ?? null,
                 'credential_id' => bin2hex($credentialId),
             ]);
-            session()->flash('status', __('webauthn::webauthn.error_login_failed'));
+            $this->error = __('webauthn::webauthn.error_login_failed');
 
             return;
         }
@@ -161,5 +188,13 @@ class WebAuthnLogin extends Component
     public function render()
     {
         return view('webauthn::livewire.web-authn-login');
+    }
+
+    private function issueChallenge(): string
+    {
+        $challenge = random_bytes(32);
+        session(['webauthn_login_challenge' => $challenge]);
+
+        return CredentialParser::base64url_encode($challenge);
     }
 }

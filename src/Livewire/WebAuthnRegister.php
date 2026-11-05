@@ -6,6 +6,7 @@ use CBOR\Decoder;
 use CBOR\StringStream;
 use Illuminate\Contracts\View\View;
 use Illuminate\Foundation\Application;
+use Livewire\Attributes\Locked;
 use Livewire\Component;
 use r0073rr0r\WebAuthn\Exceptions\ChallengeMismatchException;
 use r0073rr0r\WebAuthn\Exceptions\OriginNotAllowedException;
@@ -18,10 +19,16 @@ use Random\RandomException;
 
 class WebAuthnRegister extends Component
 {
+    #[Locked]
     public $creationOptions;
 
+    #[Locked]
     public $keys;
 
+    /**
+     * Shown to the view only. Every action works on auth()->id(), never on this value.
+     */
+    #[Locked]
     public $userId;
 
     public $keyName = '';
@@ -68,6 +75,9 @@ class WebAuthnRegister extends Component
             ],
             'pubKeyCredParams' => $pubKeyCredParams,
             'authenticatorSelection' => [
+                // Discoverable credentials let the login page work without listing credential IDs
+                'residentKey' => 'preferred',
+                'requireResidentKey' => false,
                 'userVerification' => 'preferred',
             ],
             'attestation' => 'none',
@@ -88,9 +98,14 @@ class WebAuthnRegister extends Component
 
     public function registerKey($credential): void
     {
+        $userId = auth()->id();
+        if (! $userId) {
+            return;
+        }
+
         // Rate limiting
         try {
-            WebAuthnRateLimiter::check('register', $this->userId);
+            WebAuthnRateLimiter::check('register', $userId);
         } catch (WebAuthnException $e) {
             session()->flash('status', $e->getUserMessage());
 
@@ -196,7 +211,7 @@ class WebAuthnRegister extends Component
             $aaguid = CredentialParser::extractAAGUID($authData);
 
             $key = WebAuthnKey::create([
-                'user_id' => $this->userId,
+                'user_id' => $userId,
                 'name' => $this->keyName,
                 'credentialId' => $credentialId,
                 'type' => $data['type'] ?? '',
@@ -209,12 +224,12 @@ class WebAuthnRegister extends Component
             ]);
 
             // Clear rate limit on success
-            WebAuthnRateLimiter::clear('register', $this->userId);
+            WebAuthnRateLimiter::clear('register', $userId);
 
             // Audit log registration
-            AuditLogger::logRegistration($this->userId, $this->keyName, $credentialId, $aaguid);
+            AuditLogger::logRegistration($userId, $this->keyName, $credentialId, $aaguid);
 
-            $this->keys = WebAuthnKey::where('user_id', $this->userId)->get();
+            $this->keys = WebAuthnKey::where('user_id', $userId)->get();
             // Invalidate registration challenge after successful registration
             session()->forget('webauthn_register_challenge');
             $this->closeModal();
@@ -223,13 +238,13 @@ class WebAuthnRegister extends Component
 
         } catch (WebAuthnException $e) {
             AuditLogger::logError('registration', $e, [
-                'user_id' => $this->userId,
+                'user_id' => $userId,
                 'key_name' => $this->keyName,
             ]);
             session()->flash('status', $e->getUserMessage());
         } catch (\Throwable $e) {
             AuditLogger::logError('registration', $e, [
-                'user_id' => $this->userId,
+                'user_id' => $userId,
                 'key_name' => $this->keyName,
             ]);
             session()->flash('status', __('webauthn::webauthn.error_registration_failed'));
@@ -238,8 +253,9 @@ class WebAuthnRegister extends Component
 
     public function deleteKey($id): void
     {
+        $userId = auth()->id();
         $key = WebAuthnKey::find($id);
-        if (! $key || $key->user_id !== $this->userId) {
+        if (! $userId || ! $key || (int) $key->user_id !== (int) $userId) {
             return;
         }
 
@@ -247,9 +263,9 @@ class WebAuthnRegister extends Component
         $key->delete();
 
         // Audit log deletion
-        AuditLogger::logKeyDeletion($this->userId, $id, $keyName);
+        AuditLogger::logKeyDeletion($userId, $id, $keyName);
 
-        $this->keys = WebAuthnKey::where('user_id', $this->userId)->get();
+        $this->keys = WebAuthnKey::where('user_id', $userId)->get();
         session()->flash('status', __('webauthn::webauthn.success_key_deleted'));
     }
 

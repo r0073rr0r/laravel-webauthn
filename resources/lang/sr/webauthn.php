@@ -24,6 +24,8 @@ return [
     'registered_security_keys' => 'Registrovani sigurnosni ključevi',
     'no_keys_registered' => 'Još nisu registrovani ključevi.',
     'login_with_passkey' => 'Prijava preko Passkey-a',
+    'passkey_signing_in' => 'Prijavljivanje…',
+    'error_passkey_cancelled' => 'Prijava preko passkey-a je otkazana ili je isteklo vreme.',
     'sign_in_with_passkey' => 'Prijavite se preko Passkey-a',
     'delete_key_confirm' => 'Da li ste sigurni da želite da obrišete ovaj ključ?',
 ];
